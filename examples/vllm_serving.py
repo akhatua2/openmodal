@@ -24,7 +24,7 @@ app = openmodal.App("vllm-test")
 
 @app.function(
     image=vllm_image,
-    gpu="L4",
+    gpu="H100",
     scaledown_window=5 * 60,
     timeout=10 * 60,
 )

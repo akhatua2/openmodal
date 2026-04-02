@@ -15,8 +15,6 @@ def deploy(app_path: str):
     app = load_app(app_path)
     click.echo(f"openmodal deploy: {app.name}")
 
-    provider = _get_provider()
-
     for func_name, spec in app.functions.items():
         click.echo(f"\n  function: {func_name}")
         if spec.image is None:
@@ -28,6 +26,7 @@ def deploy(app_path: str):
 
         click.echo(f"  creating container ({spec.gpu})...")
         spec._app_name = app.name
+        provider = _get_provider(spec)
         _, ip = provider.create_instance(spec, image_uri)
         port = spec.web_server_port or 8000
         url = f"http://{ip}:{port}"

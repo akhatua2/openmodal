@@ -20,9 +20,17 @@ logger = logging.getLogger("openmodal.remote")
 AGENT_PORT = DEFAULT_PORT
 
 
-def _get_provider():
+def _get_provider(spec: FunctionSpec | None = None):
     import os
-    backend = os.environ.get("OPENMODAL_PROVIDER", "gce")
+
+    override = os.environ.get("OPENMODAL_PROVIDER")
+    if override:
+        backend = override
+    elif spec and spec.web_server_port and spec.gpu:
+        backend = "gke"
+    else:
+        backend = "gce"
+
     if backend == "gke":
         from openmodal.providers.gcp.gke import get_provider
     else:
@@ -83,7 +91,7 @@ def _create_agent_instance(app_name: str, func_name: str, spec: FunctionSpec) ->
     """Create a container running the openmodal agent. Returns a connected RemoteExecutor."""
     from openmodal.cli.console import Spinner, success
 
-    provider = _get_provider()
+    provider = _get_provider(spec)
     instance_name = app_name.lower().replace("_", "-")
     spec._app_name = app_name
 

@@ -25,6 +25,7 @@ def setup_cluster(gpu_types: list[str] | None = None, zone: str = DEFAULT_ZONE):
         "--num-nodes=1",
         "--enable-autoscaling", "--min-nodes=0", "--max-nodes=1",
         "--addons=GcsFuseCsiDriver",
+        f"--workload-pool={project}.svc.id.goog",
         "--release-channel=regular",
         f"--project={project}",
     ], check=True)

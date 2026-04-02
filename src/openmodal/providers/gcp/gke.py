@@ -126,9 +126,36 @@ def _build_pod_spec(
 
 class GKEProvider(CloudProvider):
     def __init__(self):
-        config.load_kube_config()
+        try:
+            config.load_kube_config()
+        except Exception:
+            self._auto_provision_cluster()
+            config.load_kube_config()
         self._v1 = client.CoreV1Api()
         self._apps_v1 = client.AppsV1Api()
+
+    def _auto_provision_cluster(self):
+        from openmodal.cli.console import Spinner, success
+        from openmodal.providers.gcp.gke_setup import setup_cluster, CLUSTER_NAME
+        from openmodal.providers.gcp.config import get_project, DEFAULT_ZONE
+
+        import subprocess
+        result = subprocess.run(
+            ["gcloud", "container", "clusters", "list",
+             f"--zone={DEFAULT_ZONE}", f"--project={get_project()}",
+             "--format=value(name)"],
+            capture_output=True, text=True,
+        )
+        if CLUSTER_NAME in result.stdout:
+            subprocess.run([
+                "gcloud", "container", "clusters", "get-credentials", CLUSTER_NAME,
+                f"--zone={DEFAULT_ZONE}", f"--project={get_project()}",
+            ], capture_output=True, check=True)
+            return
+
+        with Spinner("Creating GKE cluster (one-time, ~5 min)...") as spinner:
+            setup_cluster()
+        success(f"GKE cluster ready. ({int(spinner.elapsed)}s)")
 
     def create_instance(
         self, spec: FunctionSpec, image_uri: str | None = None, name: str | None = None,

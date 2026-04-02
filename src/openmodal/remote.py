@@ -21,7 +21,12 @@ AGENT_PORT = DEFAULT_PORT
 
 
 def _get_provider():
-    from openmodal.providers.gcp.compute import get_provider
+    import os
+    backend = os.environ.get("OPENMODAL_PROVIDER", "gce")
+    if backend == "gke":
+        from openmodal.providers.gcp.gke import get_provider
+    else:
+        from openmodal.providers.gcp.compute import get_provider
     return get_provider()
 
 

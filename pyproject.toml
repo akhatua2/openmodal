@@ -4,9 +4,10 @@ version = "0.1.0"
 description = "Serverless GPU compute on GCP."
 requires-python = ">=3.11"
 dependencies = [
-    "click>=8.0",
-    "cloudpickle>=3.0",
-    "requests>=2.28",
+    "click>=8.3",
+    "kubernetes>=35.0",
+    "google-auth>=2.49",
+    "requests>=2.33",
 ]
 
 [project.scripts]

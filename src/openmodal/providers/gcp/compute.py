@@ -331,7 +331,17 @@ class GCPProvider(CloudProvider):
             filter_str = f"name={app_name.lower().replace('_', '-')}"
         else:
             filter_str = "labels.managed-by=openmodal"
-        return _gce_list(project, filter_str)
+        raw = _gce_list(project, filter_str)
+        return [
+            {
+                "name": vm.get("name", ""),
+                "status": vm.get("status", ""),
+                "ip": (vm.get("networkInterfaces", [{}])[0]
+                       .get("accessConfigs", [{}])[0]
+                       .get("natIP", "")),
+            }
+            for vm in raw
+        ]
 
     def wait_for_healthy(self, ip: str, port: int, timeout: int = 600) -> bool:
         url = f"http://{ip}:{port}/health"

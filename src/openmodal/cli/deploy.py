@@ -5,7 +5,7 @@ from __future__ import annotations
 import click
 
 from openmodal.cli import load_app
-from openmodal.providers.gcp.compute import get_provider
+from openmodal.remote import _get_provider
 
 
 @click.command()
@@ -15,7 +15,7 @@ def deploy(app_path: str):
     app = load_app(app_path)
     click.echo(f"openmodal deploy: {app.name}")
 
-    provider = get_provider()
+    provider = _get_provider()
 
     for func_name, spec in app.functions.items():
         click.echo(f"\n  function: {func_name}")

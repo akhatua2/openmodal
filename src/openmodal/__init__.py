@@ -1,4 +1,8 @@
-"""OpenModal: Serverless GPU compute on GCP."""
+"""OpenModal — run Modal on your own cloud."""
+
+from importlib.metadata import version as _v
+
+__version__ = _v("openmodal")
 
 from openmodal.app import App
 from openmodal.function import FunctionSpec

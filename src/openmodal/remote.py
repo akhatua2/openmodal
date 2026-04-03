@@ -94,13 +94,12 @@ class RemoteExecutor:
 
 def _create_agent_instance(app_name: str, func_name: str, spec: FunctionSpec) -> RemoteExecutor:
     """Create a container running the openmodal agent. Returns a connected RemoteExecutor."""
-    from openmodal.cli.console import Spinner, success
+    from openmodal.cli.console import Spinner, success, fail
 
     provider = _get_provider(spec)
     try:
         provider.preflight_check(spec)
     except RuntimeError as e:
-        from openmodal.cli.console import fail
         fail(str(e))
         raise SystemExit(1)
     instance_name = app_name.lower().replace("_", "-")
@@ -118,16 +117,21 @@ def _create_agent_instance(app_name: str, func_name: str, spec: FunctionSpec) ->
 
     spec_label = provider.machine_spec_str(spec.gpu)
 
-    with Spinner(f"Creating container... ({spec_label})") as spinner:
-        _, ip = provider.create_instance(spec, image_uri, name=instance_name)
-        elapsed_create = int(spinner.elapsed)
+    try:
+        with Spinner(f"Creating container... ({spec_label})") as spinner:
+            _, ip = provider.create_instance(spec, image_uri, name=instance_name)
+            elapsed_create = int(spinner.elapsed)
+    except (RuntimeError, TimeoutError) as e:
+        fail(str(e))
+        raise SystemExit(1)
 
     success(f"Container created. ({spec_label} \u2022 {ip} \u2022 {elapsed_create}s)")
 
     timeout = 600 if has_image else 300
     with Spinner("Starting agent...") as spinner:
         if not provider.wait_for_healthy(ip, AGENT_PORT, timeout=timeout):
-            raise RuntimeError(f"Agent on {instance_name} ({ip}) failed to start within {timeout}s")
+            fail(f"Agent on {instance_name} ({ip}) failed to start within {timeout}s")
+            raise SystemExit(1)
         elapsed_ready = int(spinner.elapsed)
 
     success(f"Container ready. ({elapsed_create + elapsed_ready}s total)")

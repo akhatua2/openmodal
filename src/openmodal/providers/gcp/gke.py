@@ -254,6 +254,8 @@ class GKEProvider(CloudProvider):
         return name, ip
 
     def _create_idle_scaledown(self, name: str, scaledown_window: int, port: int):
+        # TODO: Replace CronJob hack with KEDA ScaledObject (like AWS/Azure providers).
+        # KEDA is already installed on the cluster but we need the right RBAC permissions.
         from kubernetes.client import BatchV1Api
 
         batch_v1 = BatchV1Api()

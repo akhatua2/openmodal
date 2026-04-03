@@ -334,9 +334,12 @@ class GKEProvider(CloudProvider):
             timeout_seconds=timeout,
         ):
             pod = event["object"]
-            if pod.status.phase == "Running":
-                w.stop()
-                return
+            if pod.status.phase == "Running" and pod.status.pod_ip:
+                if pod.status.container_statuses and all(
+                    cs.ready or (cs.state and cs.state.running) for cs in pod.status.container_statuses
+                ):
+                    w.stop()
+                    return
             if pod.status.phase in ("Failed", "Unknown"):
                 w.stop()
                 raise RuntimeError(f"Pod {name} entered {pod.status.phase} state")

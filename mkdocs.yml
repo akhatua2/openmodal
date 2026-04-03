@@ -6,16 +6,16 @@ repo_name: akhatua2/openmodal
 theme:
   name: material
   palette:
-    - scheme: default
-      primary: black
-      toggle:
-        icon: material/brightness-7
-        name: Dark mode
     - scheme: slate
       primary: black
       toggle:
         icon: material/brightness-4
         name: Light mode
+    - scheme: default
+      primary: black
+      toggle:
+        icon: material/brightness-7
+        name: Dark mode
   features:
     - navigation.instant
     - navigation.sections

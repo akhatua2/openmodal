@@ -399,6 +399,59 @@ class GKEProvider(CloudProvider):
     def instance_name(self, app_name: str, func_name: str, suffix: str = "") -> str:
         return _k8s_name(app_name)
 
+    def create_sandbox_pod(self, name: str, image_uri: str | None, timeout: int = 3600):
+        try:
+            self._v1.delete_namespaced_pod(name, NAMESPACE, grace_period_seconds=0)
+            time.sleep(2)
+        except client.exceptions.ApiException:
+            pass
+
+        image = image_uri or "ubuntu:24.04"
+        pod = client.V1Pod(
+            metadata=client.V1ObjectMeta(
+                name=name,
+                labels={"app": name, "managed-by": LABEL_MANAGED_BY},
+            ),
+            spec=client.V1PodSpec(
+                containers=[client.V1Container(
+                    name="main",
+                    image=image,
+                    command=["sleep", str(timeout)],
+                )],
+                restart_policy="Never",
+            ),
+        )
+        self._v1.create_namespaced_pod(NAMESPACE, pod)
+        self._wait_for_pod_running(name)
+
+    def exec_in_pod(self, pod_name: str, command: str) -> dict:
+        from kubernetes.stream import stream
+
+        resp = stream(
+            self._v1.connect_get_namespaced_pod_exec,
+            name=pod_name,
+            namespace=NAMESPACE,
+            command=["bash", "-lc", command],
+            stderr=True,
+            stdout=True,
+            stdin=False,
+            tty=False,
+            _preload_content=False,
+        )
+        stdout = ""
+        stderr = ""
+        while resp.is_open():
+            resp.update(timeout=1)
+            if resp.peek_stdout():
+                stdout += resp.read_stdout()
+            if resp.peek_stderr():
+                stderr += resp.read_stderr()
+        resp.close()
+        returncode = resp.returncode if hasattr(resp, 'returncode') else 0
+        output = stdout + stderr if stderr else stdout
+        from openmodal.sandbox import ExecResult
+        return ExecResult(output=output.rstrip("\n"), returncode=returncode)
+
 
 _provider: GKEProvider | None = None
 

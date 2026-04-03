@@ -34,3 +34,7 @@ class CloudProvider(abc.ABC):
     @abc.abstractmethod
     def instance_name(self, app_name: str, func_name: str, suffix: str = "") -> str:
         ...
+
+    def exec_in_pod(self, pod_name: str, command: str) -> dict:
+        """Execute a command in a running pod. Returns {output, returncode}."""
+        raise NotImplementedError

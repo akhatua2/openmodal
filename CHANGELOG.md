@@ -2,8 +2,19 @@
 
 ## 0.3.5 (2026-04-03)
 
+### Added
+- **`openmodal secret`** CLI — `create`, `list`, `delete` named secrets stored in `~/.openmodal/secrets/`
+- `Secret.from_name()` now loads from the local secret store (no cloud secret manager permissions needed)
+- **`add_python` uses python-build-standalone** — installs any Python version (3.10–3.13) on any base image via pre-compiled builds from Astral
+
+### Changed
+- SFT example uses `nvidia/cuda:12.8.1-devel-ubuntu24.04` base image (ships with Python 3.12 + CUDA)
+- SFT example uses `Secret.from_name("wandb-secret")` instead of inline env var
+- GPU containers now set `LD_LIBRARY_PATH` and `NVIDIA_VISIBLE_DEVICES` for proper CUDA detection
+
 ### Fixed
 - `Volume.from_name()` is now lazy — no longer tries to create buckets at import time, which was crashing inside remote containers where cloud CLIs aren't installed
+- `delete_instance` no longer force-kills pods — uses default grace period so the sync-upload sidecar has time to push volume data back to cloud storage
 
 ## 0.3.4 (2026-04-03)
 

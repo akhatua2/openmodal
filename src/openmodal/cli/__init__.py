@@ -54,12 +54,14 @@ from openmodal.cli.deploy import deploy  # noqa: E402
 from openmodal.cli.logs import logs  # noqa: E402
 from openmodal.cli.ps import ps  # noqa: E402
 from openmodal.cli.run import run  # noqa: E402
+from openmodal.cli.secret import secret  # noqa: E402
 from openmodal.cli.setup import setup  # noqa: E402
 from openmodal.cli.stop import stop  # noqa: E402
 
 cli.add_command(deploy)
 cli.add_command(logs)
 cli.add_command(run)
+cli.add_command(secret)
 cli.add_command(stop)
 cli.add_command(ps)
 cli.add_command(setup)

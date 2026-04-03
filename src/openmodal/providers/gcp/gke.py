@@ -56,6 +56,13 @@ def _build_pod_spec(
         ))
 
     env_vars = []
+    if spec.gpu:
+        env_vars.append(client.V1EnvVar(
+            name="LD_LIBRARY_PATH",
+            value="/usr/local/nvidia/lib64:/usr/local/cuda/lib64",
+        ))
+        env_vars.append(client.V1EnvVar(name="NVIDIA_VISIBLE_DEVICES", value="all"))
+        env_vars.append(client.V1EnvVar(name="NVIDIA_DRIVER_CAPABILITIES", value="compute,utility"))
     if spec.source_file:
         env_vars.append(client.V1EnvVar(name="PYTHONPATH", value="/opt"))
 
@@ -272,7 +279,7 @@ class GKEProvider(CloudProvider):
         )
         self._v1.create_namespaced_service(NAMESPACE, service)
 
-        if spec.scaledown_window > 0:
+        if spec.scaledown_window > 0 and spec.web_server_port:
             self._create_idle_scaledown(name, spec.scaledown_window, spec.web_server_port)
 
         ip = self._wait_for_external_ip(name, timeout=300)
@@ -463,12 +470,12 @@ class GKEProvider(CloudProvider):
         from kubernetes.client import BatchV1Api
         batch_v1 = BatchV1Api()
 
+        # Use default grace period (from pod spec) so the sync-upload
+        # sidecar has time to push volume data back to cloud storage.
         for api_call in [
             lambda: self._apps_v1.delete_namespaced_deployment(instance_name, NAMESPACE),
             lambda: self._v1.delete_namespaced_service(instance_name, NAMESPACE),
-            lambda: self._v1.delete_namespaced_pod(
-                instance_name, NAMESPACE, body=client.V1DeleteOptions(grace_period_seconds=0),
-            ),
+            lambda: self._v1.delete_namespaced_pod(instance_name, NAMESPACE),
             lambda: batch_v1.delete_namespaced_cron_job(f"{instance_name}-idle-scaledown", NAMESPACE),
         ]:
             with contextlib.suppress(client.exceptions.ApiException):

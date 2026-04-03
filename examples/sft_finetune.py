@@ -19,7 +19,8 @@ app = openmodal.App("sft-finetune")
 import os
 
 train_image = (
-    openmodal.Image.debian_slim()
+    openmodal.Image.from_registry("nvidia/cuda:12.8.1-devel-ubuntu24.04", add_python="3.12")
+    .entrypoint([])
     .uv_pip_install(
         "accelerate==1.9.0",
         "datasets==3.6.0",
@@ -76,8 +77,7 @@ class TrainingConfig:
             self.experiment_name = f"{model_short}-r{self.lora_r}-{timestamp}"
 
 
-import os
-wandb_secret = openmodal.Secret.from_dict({"WANDB_API_KEY": os.environ.get("WANDB_API_KEY", "")})
+wandb_secret = openmodal.Secret.from_name("wandb-secret")
 
 @app.function(
     image=train_image,

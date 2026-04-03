@@ -49,7 +49,11 @@ class CloudProvider(abc.ABC):
         """Check whether an image already exists in the registry."""
         raise NotImplementedError
 
-    def create_sandbox_pod(self, name: str, image_uri: str | None, timeout: int = 3600, **kwargs):
+    def create_sandbox_pod(
+        self, name: str, image_uri: str | None, timeout: int = 3600,
+        gpu: str | None = None, cpu: float | None = None, memory: int | None = None,
+        env_vars: dict[str, str] | None = None,
+    ):
         """Create an ephemeral sandbox pod/instance."""
         raise NotImplementedError
 

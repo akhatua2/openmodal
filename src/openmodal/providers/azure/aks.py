@@ -407,9 +407,7 @@ class AKSProvider(CloudProvider):
         for api_call in [
             lambda: self._apps_v1.delete_namespaced_deployment(instance_name, NAMESPACE),
             lambda: self._v1.delete_namespaced_service(instance_name, NAMESPACE),
-            lambda: self._v1.delete_namespaced_pod(
-                instance_name, NAMESPACE, body=client.V1DeleteOptions(grace_period_seconds=0),
-            ),
+            lambda: self._v1.delete_namespaced_pod(instance_name, NAMESPACE),
             lambda: custom.delete_namespaced_custom_object(
                 "keda.sh", "v1alpha1", NAMESPACE, "scaledobjects", f"{instance_name}-scaledown",
             ),

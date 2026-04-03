@@ -8,10 +8,31 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger("openmodal.image")
 
 OPENMODAL_PIP_INSTALL = "RUN pip install openmodal"
+
+# Pre-compiled Python builds from python-build-standalone (maintained by Astral/uv).
+# Allows installing any Python version on any base image.
+_PBS_TAG = "20260325"
+_PBS_PYTHONS = {
+    "3.10": "3.10.20",
+    "3.11": "3.11.15",
+    "3.12": "3.12.13",
+    "3.13": "3.13.12",
+}
+
+
+def _python_standalone_url(version: str) -> str:
+    full = _PBS_PYTHONS.get(version)
+    if not full:
+        raise ValueError(f"Unsupported Python version: {version}. Available: {list(_PBS_PYTHONS)}")
+    return (
+        f"https://github.com/astral-sh/python-build-standalone/releases/download/{_PBS_TAG}/"
+        f"cpython-{full}+{_PBS_TAG}-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
+    )
 
 class Image:
     """Chainable builder that produces a Dockerfile and pushes to Artifact Registry."""
@@ -35,14 +56,16 @@ class Image:
         return img
 
     @classmethod
-    def from_registry(cls, tag: str, *, add_python: str | None = None, secret: any | None = None) -> Image:
+    def from_registry(cls, tag: str, *, add_python: str | None = None, secret: Any | None = None) -> Image:
         img = cls([f"FROM {tag}", "ENV DEBIAN_FRONTEND=noninteractive"])
         if add_python:
+            url = _python_standalone_url(add_python)
             img = img._append(
-                "RUN apt-get update && apt-get install -y python3 python3-pip python3-venv && "
-                "ln -sf /usr/bin/python3 /usr/bin/python && "
-                "rm -f /usr/lib/python*/EXTERNALLY-MANAGED && "
-                "rm -rf /var/lib/apt/lists/*",
+                "RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*",
+                f"RUN curl -sSL {url} | tar xz -C /usr/local --strip-components=1",
+                f"RUN ln -sf /usr/local/bin/python{add_python} /usr/local/bin/python3 && "
+                "ln -sf /usr/local/bin/python3 /usr/local/bin/python && "
+                "ln -sf /usr/local/bin/pip3 /usr/local/bin/pip",
             )
         return img
 

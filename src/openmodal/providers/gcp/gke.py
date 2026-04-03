@@ -137,19 +137,19 @@ class GKEProvider(CloudProvider):
     def _auto_provision_cluster(self):
         from openmodal.cli.console import Spinner, success
         from openmodal.providers.gcp.gke_setup import setup_cluster, CLUSTER_NAME
-        from openmodal.providers.gcp.config import get_project, DEFAULT_ZONE
+        from openmodal.providers.gcp.config import get_project, DEFAULT_REGION
 
         import subprocess
         result = subprocess.run(
             ["gcloud", "container", "clusters", "list",
-             f"--zone={DEFAULT_ZONE}", f"--project={get_project()}",
+             f"--region={DEFAULT_REGION}", f"--project={get_project()}",
              "--format=value(name)"],
             capture_output=True, text=True,
         )
         if CLUSTER_NAME in result.stdout:
             subprocess.run([
                 "gcloud", "container", "clusters", "get-credentials", CLUSTER_NAME,
-                f"--zone={DEFAULT_ZONE}", f"--project={get_project()}",
+                f"--region={DEFAULT_REGION}", f"--project={get_project()}",
             ], capture_output=True, check=True)
             return
 
@@ -218,8 +218,75 @@ class GKEProvider(CloudProvider):
 
         self._v1.create_namespaced_service(NAMESPACE, service)
 
+        if spec.scaledown_window > 0:
+            self._create_idle_scaledown(name, spec.scaledown_window, spec.web_server_port)
+
         ip = self._wait_for_external_ip(name, timeout=300)
         return name, ip
+
+    def _create_idle_scaledown(self, name: str, scaledown_window: int, port: int):
+        from kubernetes.client import BatchV1Api
+
+        batch_v1 = BatchV1Api()
+
+        try:
+            batch_v1.delete_namespaced_cron_job(f"{name}-idle-scaledown", NAMESPACE)
+        except client.exceptions.ApiException:
+            pass
+
+        script = (
+            f'DEPLOY={name}; '
+            f'NAMESPACE={NAMESPACE}; '
+            f'PORT={port}; '
+            f'WINDOW={scaledown_window}; '
+            'REPLICAS=$(kubectl get deploy $DEPLOY -n $NAMESPACE -o jsonpath="{.spec.replicas}"); '
+            'if [ "$REPLICAS" = "0" ]; then exit 0; fi; '
+            'POD=$(kubectl get pods -n $NAMESPACE -l app=$DEPLOY -o jsonpath="{.items[0].metadata.name}" 2>/dev/null); '
+            'if [ -z "$POD" ]; then exit 0; fi; '
+            'LAST=$(kubectl get pod $POD -n $NAMESPACE -o jsonpath="{.metadata.annotations.last-active}" 2>/dev/null); '
+            'NOW=$(date +%s); '
+            'CONNS=$(kubectl exec $POD -n $NAMESPACE -- sh -c "ss -tn | grep :$PORT | grep -c ESTAB" 2>/dev/null || echo 0); '
+            'if [ "$CONNS" -gt "0" ]; then '
+            '  kubectl annotate pod $POD -n $NAMESPACE last-active=$NOW --overwrite; '
+            '  exit 0; '
+            'fi; '
+            'if [ -z "$LAST" ]; then '
+            '  kubectl annotate pod $POD -n $NAMESPACE last-active=$NOW --overwrite; '
+            '  exit 0; '
+            'fi; '
+            'IDLE=$((NOW - LAST)); '
+            'if [ "$IDLE" -ge "$WINDOW" ]; then '
+            '  kubectl scale deploy $DEPLOY -n $NAMESPACE --replicas=0; '
+            'fi'
+        )
+
+        cronjob = client.V1CronJob(
+            metadata=client.V1ObjectMeta(
+                name=f"{name}-idle-scaledown",
+                labels={"managed-by": LABEL_MANAGED_BY},
+            ),
+            spec=client.V1CronJobSpec(
+                schedule="* * * * *",
+                job_template=client.V1JobTemplateSpec(
+                    spec=client.V1JobSpec(
+                        template=client.V1PodTemplateSpec(
+                            spec=client.V1PodSpec(
+                                service_account_name="default",
+                                restart_policy="Never",
+                                containers=[client.V1Container(
+                                    name="scaler",
+                                    image="bitnami/kubectl:latest",
+                                    command=["sh", "-c", script],
+                                )],
+                            ),
+                        ),
+                        backoff_limit=0,
+                    ),
+                ),
+            ),
+        )
+
+        batch_v1.create_namespaced_cron_job(NAMESPACE, cronjob)
 
     def _create_pod(self, spec: FunctionSpec, image_uri: str, name: str) -> tuple[str, str]:
         pod = _build_pod_spec(spec, image_uri, name)
@@ -264,21 +331,19 @@ class GKEProvider(CloudProvider):
                 raise RuntimeError(f"Pod {name} entered {pod.status.phase} state")
 
     def delete_instance(self, instance_name: str) -> None:
-        try:
-            self._apps_v1.delete_namespaced_deployment(instance_name, NAMESPACE)
-        except client.exceptions.ApiException:
-            pass
-        try:
-            self._v1.delete_namespaced_service(instance_name, NAMESPACE)
-        except client.exceptions.ApiException:
-            pass
-        try:
-            self._v1.delete_namespaced_pod(
-                instance_name, NAMESPACE,
-                body=client.V1DeleteOptions(grace_period_seconds=0),
-            )
-        except client.exceptions.ApiException:
-            pass
+        from kubernetes.client import BatchV1Api
+        batch_v1 = BatchV1Api()
+
+        for api_call in [
+            lambda: self._apps_v1.delete_namespaced_deployment(instance_name, NAMESPACE),
+            lambda: self._v1.delete_namespaced_service(instance_name, NAMESPACE),
+            lambda: self._v1.delete_namespaced_pod(instance_name, NAMESPACE, body=client.V1DeleteOptions(grace_period_seconds=0)),
+            lambda: batch_v1.delete_namespaced_cron_job(f"{instance_name}-idle-scaledown", NAMESPACE),
+        ]:
+            try:
+                api_call()
+            except client.exceptions.ApiException:
+                pass
 
     def list_instances(self, app_name: str | None = None) -> list[dict]:
         label_selector = f"managed-by={LABEL_MANAGED_BY}"

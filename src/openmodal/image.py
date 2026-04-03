@@ -15,9 +15,6 @@ from openmodal.providers.gcp.registry import get_registry_url, ensure_repository
 
 logger = logging.getLogger("openmodal.image")
 
-OPENMODAL_SRC_DIR = Path(__file__).parent
-
-
 class Image:
     """Chainable builder that produces a Dockerfile and pushes to Artifact Registry."""
 
@@ -80,18 +77,32 @@ class Image:
     def workdir(self, path: str) -> Image:
         return self._append(f"WORKDIR {path}")
 
+    def with_web_server(self, source_file: str, function_name: str) -> Image:
+        """Extend this image to run a @web_server function on startup."""
+        filename = os.path.basename(source_file)
+        module_name = filename.removesuffix(".py")
+        img = self._append(
+            "RUN pip install https://storage.googleapis.com/openmodal-packages/openmodal-0.2.1-py3-none-any.whl",
+            f"COPY {filename} /opt/{filename}",
+            "ENV PYTHONPATH=/opt",
+            f"ENV OPENMODAL_MODULE={module_name}",
+            f"ENV OPENMODAL_FUNCTION={function_name}",
+            'CMD ["python", "-m", "openmodal.runtime.web_server"]',
+        )
+        img._context_files[filename] = source_file
+        return img
+
     def with_agent(self, port: int = 50051, source_file: str | None = None) -> Image:
         """Extend this image with the openmodal SDK, execution agent, and user source."""
         img = self._append(
-            "RUN pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ openmodal",
-            "COPY _openmodal_agent.py /opt/_openmodal_agent.py",
+            "RUN pip install https://storage.googleapis.com/openmodal-packages/openmodal-0.2.1-py3-none-any.whl",
             "ENV PYTHONPATH=/opt",
         )
         if source_file and os.path.isfile(source_file):
             filename = os.path.basename(source_file)
             img = img._append(f"COPY {filename} /opt/{filename}")
             img._context_files[filename] = source_file
-        return img._append(f'CMD ["python", "/opt/_openmodal_agent.py"]')
+        return img._append(f'CMD ["python", "-m", "openmodal.runtime.agent"]')
 
     def to_dockerfile(self) -> str:
         return "\n".join(self._commands) + "\n"
@@ -102,21 +113,12 @@ class Image:
             src = self._context_files[name]
             if os.path.isfile(src):
                 h.update(Path(src).read_bytes())
-        if "_openmodal_agent.py" in self.to_dockerfile():
-            agent_src = OPENMODAL_SRC_DIR / "runtime" / "agent.py"
-            h.update(agent_src.read_bytes())
         return h.hexdigest()[:12]
 
     def _prepare_build_context(self, tmpdir: str):
-        """Write the Dockerfile and all context files to the build directory."""
         (Path(tmpdir) / "Dockerfile").write_text(self.to_dockerfile())
-
         for dest_name, src_path in self._context_files.items():
             shutil.copy2(src_path, Path(tmpdir) / dest_name)
-
-        if "_openmodal_agent.py" in self.to_dockerfile():
-            agent_src = OPENMODAL_SRC_DIR / "runtime" / "agent.py"
-            shutil.copy2(agent_src, Path(tmpdir) / "_openmodal_agent.py")
 
     def build_and_push(self, name: str, *, use_cloud_build: bool = True) -> str:
         """Build and push to Artifact Registry. Returns the full image URI."""

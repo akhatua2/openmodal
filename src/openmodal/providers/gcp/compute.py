@@ -36,9 +36,8 @@ def _secrets_script(spec: FunctionSpec) -> str:
 
 
 def _startup_script_bare(spec: FunctionSpec) -> str:
-    from openmodal.image import OPENMODAL_SRC_DIR
-
-    agent_path = OPENMODAL_SRC_DIR / "runtime" / "agent.py"
+    from pathlib import Path
+    agent_path = Path(__file__).parent.parent.parent / "runtime" / "agent.py"
     agent_encoded = base64.b64encode(agent_path.read_bytes()).decode()
 
     source_block = ""

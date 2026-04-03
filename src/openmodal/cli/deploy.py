@@ -21,7 +21,11 @@ def deploy(app_path: str):
             raise click.ClickException(f"No image defined for {func_name}")
 
         click.echo("  building image...")
-        image_uri = spec.image.build_and_push(app.name)
+        if spec.web_server_port and spec.source_file:
+            image = spec.image.with_web_server(spec.source_file, spec.name)
+        else:
+            image = spec.image
+        image_uri = image.build_and_push(app.name)
         click.echo(f"  image: {image_uri}")
 
         click.echo(f"  creating container ({spec.gpu})...")

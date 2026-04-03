@@ -5,30 +5,22 @@ from __future__ import annotations
 
 def get_provider(spec=None, *, sandbox: bool = False):
     import os
-    from openmodal.function import FunctionSpec
 
     override = os.environ.get("OPENMODAL_PROVIDER")
     if override:
         backend = override
-    elif sandbox:
-        backend = "gke"
-    elif spec and isinstance(spec, FunctionSpec) and spec.gpu and (spec.web_server_port or spec.volumes):
-        backend = "gke"
     else:
-        backend = "gce"
+        backend = "gke"
 
     if backend == "local":
         from openmodal.providers.local import get_provider as _get
         return _get()
-    elif backend in ("aws", "eks"):
+    elif backend == "aws":
         from openmodal.providers.aws import get_provider as _get
         return _get()
-    elif backend in ("azure", "aks"):
+    elif backend == "azure":
         from openmodal.providers.azure import get_provider as _get
         return _get()
-    elif backend == "gke":
-        from openmodal.providers.gcp.gke import get_provider as _get
-        return _get()
     else:
-        from openmodal.providers.gcp.compute import get_provider as _get
+        from openmodal.providers.gcp.gke import get_provider as _get
         return _get()

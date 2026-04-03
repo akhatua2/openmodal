@@ -26,18 +26,15 @@ If you request a GPU that doesn't match your hardware, OpenModal tells you and s
 
 ## GCP (default)
 
-Two backends, auto-detected based on your workload:
-
-- **GCE** — raw VMs for `f.remote()` and simple compute
-- **GKE** — Kubernetes for GPU serving (`@web_server`), sandboxes, and functions with volumes. Auto-scales with spot GPUs.
+Uses GKE (Google Kubernetes Engine) for all workloads. Auto-scales with spot GPUs and supports scale-to-zero.
 
 ```bash
-openmodal run examples/hello_world.py          # auto-detects GCE
-openmodal deploy examples/vllm_serving.py      # auto-detects GKE (GPU + web_server)
-openmodal run examples/sandbox.py              # auto-detects GKE (sandboxes)
+openmodal run examples/hello_world.py
+openmodal deploy examples/vllm_serving.py
+openmodal run examples/sandbox.py
 ```
 
-You can also force a backend if needed: `OPENMODAL_PROVIDER=gce` or `OPENMODAL_PROVIDER=gke`.
+Auto-creates the GKE cluster on first run (~5 min one-time setup).
 
 ## AWS
 

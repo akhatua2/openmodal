@@ -6,6 +6,23 @@
 pip install openmodal
 ```
 
+## Interactive setup
+
+The fastest way to get started is the setup wizard. It checks your prerequisites, walks you through authentication, and configures everything:
+
+```bash
+openmodal setup
+```
+
+Or pick a provider directly:
+
+```bash
+openmodal setup local
+openmodal setup gcp
+openmodal setup aws
+openmodal setup azure
+```
+
 ## Local (Docker)
 
 If you just want to try OpenModal without a cloud account, all you need is Docker:
@@ -49,22 +66,7 @@ gcloud services enable artifactregistry.googleapis.com
 openmodal run examples/hello_world.py
 ```
 
-You should see:
-
-```
-✓ Initialized.
-✓ Created objects.
-✓ Container created. (2 vCPU, 2 GB RAM • 34.135.113.28 • 14s)
-✓ Container ready. (60s total)
-hello 1000
-1000000
-1000000
-2646700
-✓ Containers cleaned up.
-✓ App completed.
-```
-
-OpenModal auto-detects the right backend: GKE for GPU workloads and sandboxes, GCE for simple compute.
+OpenModal uses GKE for all workloads. The cluster is created automatically on first run.
 
 ## AWS
 

@@ -56,7 +56,6 @@ DEFAULT_ZONE = "us-central1-a"
 DEFAULT_REGION = "us-central1"
 ARTIFACT_REGISTRY_REPO = "openmodal"
 GCS_BUCKET_PREFIX = "openmodal"
-FIREWALL_TAG = "openmodal-serve"
 
 
 def get_project() -> str:

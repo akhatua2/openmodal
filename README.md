@@ -34,21 +34,14 @@ results = train.map(configs)
 ```bash
 pip install openmodal
 
-# Local (just needs Docker)
-openmodal --local run examples/hello_world.py
+# Interactive setup — checks prerequisites, configures your provider
+openmodal setup
 
-# GCP
-gcloud auth login
-openmodal run examples/hello_world.py
-
-# AWS
-pip install "openmodal[aws]"
-aws login
-openmodal --aws run examples/hello_world.py
-
-# Azure
-az login
-openmodal --azure run examples/hello_world.py
+# Or just run directly
+openmodal --local run examples/hello_world.py   # Local (just needs Docker)
+openmodal run examples/hello_world.py           # GCP (default)
+openmodal --aws run examples/hello_world.py     # AWS
+openmodal --azure run examples/hello_world.py   # Azure
 ```
 
 [Setup guide](docs/setup.md) · [Examples](docs/examples/) · [Modal docs](https://modal.com/docs/guide) (same API, just swap the import)

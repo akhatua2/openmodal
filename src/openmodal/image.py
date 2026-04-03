@@ -27,7 +27,17 @@ class Image:
         return Image(self._commands + list(lines), new_files)
 
     @classmethod
-    def from_registry(cls, tag: str, *, add_python: str | None = None) -> Image:
+    def from_dockerfile(cls, path: str, *, context_dir: str | None = None) -> Image:
+        dockerfile_content = Path(path).read_text()
+        img = cls(dockerfile_content.strip().split("\n"))
+        if context_dir:
+            for f in Path(context_dir).iterdir():
+                if f.is_file() and f.name != "Dockerfile":
+                    img._context_files[f.name] = str(f)
+        return img
+
+    @classmethod
+    def from_registry(cls, tag: str, *, add_python: str | None = None, secret: any = None) -> Image:
         img = cls([f"FROM {tag}", "ENV DEBIAN_FRONTEND=noninteractive"])
         if add_python:
             img = img._append(

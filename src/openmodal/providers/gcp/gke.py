@@ -399,7 +399,11 @@ class GKEProvider(CloudProvider):
     def instance_name(self, app_name: str, func_name: str, suffix: str = "") -> str:
         return _k8s_name(app_name)
 
-    def create_sandbox_pod(self, name: str, image_uri: str | None, timeout: int = 3600):
+    def create_sandbox_pod(
+        self, name: str, image_uri: str | None, timeout: int = 3600,
+        gpu: str | None = None, cpu: float | None = None, memory: int | None = None,
+        env_vars: dict[str, str] | None = None,
+    ):
         try:
             self._v1.delete_namespaced_pod(name, NAMESPACE, grace_period_seconds=0)
             time.sleep(2)
@@ -407,16 +411,40 @@ class GKEProvider(CloudProvider):
             pass
 
         image = image_uri or "ubuntu:24.04"
+
+        resources = client.V1ResourceRequirements(requests={}, limits={})
+        node_selector = {}
+        tolerations = []
+
+        if gpu:
+            gpu_type, gpu_count = _gpu_node_selector(gpu)
+            resources.limits["nvidia.com/gpu"] = str(gpu_count)
+            resources.requests["nvidia.com/gpu"] = str(gpu_count)
+            node_selector["gpu-type"] = gpu_type
+            tolerations.append(client.V1Toleration(
+                key="nvidia.com/gpu", operator="Exists", effect="NoSchedule",
+            ))
+        if cpu:
+            resources.requests["cpu"] = str(cpu)
+        if memory:
+            resources.requests["memory"] = f"{memory}Mi"
+
+        env_list = [client.V1EnvVar(name=k, value=v) for k, v in (env_vars or {}).items()]
+
         pod = client.V1Pod(
             metadata=client.V1ObjectMeta(
                 name=name,
                 labels={"app": name, "managed-by": LABEL_MANAGED_BY},
             ),
             spec=client.V1PodSpec(
+                node_selector=node_selector or None,
+                tolerations=tolerations or None,
                 containers=[client.V1Container(
                     name="main",
                     image=image,
                     command=["sleep", str(timeout)],
+                    env=env_list or None,
+                    resources=resources,
                 )],
                 restart_policy="Never",
             ),
@@ -424,14 +452,30 @@ class GKEProvider(CloudProvider):
         self._v1.create_namespaced_pod(NAMESPACE, pod)
         self._wait_for_pod_running(name)
 
-    def exec_in_pod(self, pod_name: str, command: str) -> dict:
+    def exec_in_pod(self, pod_name: str, *args: str, workdir: str | None = None, env: dict[str, str] | None = None):
         from kubernetes.stream import stream
+        from openmodal.process import ContainerProcess
+
+        command = list(args)
+        if workdir and command[0] == "bash" and "-c" in command:
+            idx = command.index("-c")
+            if idx + 1 < len(command):
+                command[idx + 1] = f"cd {workdir} && {command[idx + 1]}"
+        elif workdir:
+            command = ["bash", "-c", f"cd {workdir} && {' '.join(command)}"]
+
+        if env:
+            if command[0] == "bash" and "-c" in command:
+                idx = command.index("-c")
+                if idx + 1 < len(command):
+                    prefix = " ".join(f"export {k}={v};" for k, v in env.items())
+                    command[idx + 1] = f"{prefix} {command[idx + 1]}"
 
         resp = stream(
             self._v1.connect_get_namespaced_pod_exec,
             name=pod_name,
             namespace=NAMESPACE,
-            command=["bash", "-lc", command],
+            command=command,
             stderr=True,
             stdout=True,
             stdin=False,
@@ -447,10 +491,24 @@ class GKEProvider(CloudProvider):
             if resp.peek_stderr():
                 stderr += resp.read_stderr()
         resp.close()
-        returncode = resp.returncode if hasattr(resp, 'returncode') else 0
-        output = stdout + stderr if stderr else stdout
-        from openmodal.sandbox import ExecResult
-        return ExecResult(output=output.rstrip("\n"), returncode=returncode)
+        returncode = resp.returncode if hasattr(resp, "returncode") else 0
+        return ContainerProcess(stdout.rstrip("\n"), stderr.rstrip("\n"), returncode)
+
+    def copy_to_pod(self, pod_name: str, local_path: str, remote_path: str):
+        import subprocess
+        subprocess.run(
+            ["kubectl", "cp", local_path, f"{NAMESPACE}/{pod_name}:{remote_path}"],
+            check=True, capture_output=True,
+        )
+
+    def copy_from_pod(self, pod_name: str, remote_path: str, local_path: str):
+        import subprocess
+        from pathlib import Path
+        Path(local_path).parent.mkdir(parents=True, exist_ok=True)
+        subprocess.run(
+            ["kubectl", "cp", f"{NAMESPACE}/{pod_name}:{remote_path}", local_path],
+            check=True, capture_output=True,
+        )
 
 
 _provider: GKEProvider | None = None

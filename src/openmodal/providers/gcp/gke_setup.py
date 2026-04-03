@@ -64,6 +64,17 @@ def setup_cluster(gpu_types: list[str] | None = None, region: str = DEFAULT_REGI
     _run(["helm", "repo", "update"])
     _run(["helm", "install", "keda", "kedacore/keda", "--namespace", "keda", "--create-namespace"])
 
+    _run([
+        "gcloud", "container", "node-pools", "create", "sandbox-pool",
+        f"--cluster={CLUSTER_NAME}",
+        f"--region={region}",
+        "--machine-type=e2-standard-4",
+        "--num-nodes=0",
+        "--enable-autoscaling", "--min-nodes=0", "--max-nodes=10",
+        "--disk-size=100GB",
+        f"--project={project}",
+    ])
+
     for gpu_type in gpu_types:
         pool = GPU_NODE_POOLS.get(gpu_type.lower())
         if not pool:

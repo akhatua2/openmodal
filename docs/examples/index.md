@@ -13,4 +13,8 @@ the same code works with OpenModal on your own GCP infrastructure.
 
 ## GPU serving
 
-- [vLLM serving](vllm_serving.md) — deploy a quantized LLM on H100 with auto-shutdown
+- [vLLM serving](vllm_serving.md) — deploy a quantized LLM on H100 with auto scale-to-zero
+
+## Sandboxes
+
+- [Sandboxes](sandbox.md) — isolated containers for SWE agents, parallel execution

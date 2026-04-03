@@ -4,141 +4,95 @@
 
 ### `openmodal run app.py`
 
-Ephemeral execution. Creates cloud resources, runs your code, tears everything down on exit.
+Run your code on the cloud, clean up when done.
 
 ```bash
 openmodal run examples/hello_world.py
-openmodal run examples/webscraper.py --url http://example.com
 ```
 
-What happens:
-1. Loads your Python file, finds the `openmodal.App`
-2. For each `@app.function`: creates a cloud container (GCE VM or GKE pod)
-3. Runs `@app.local_entrypoint()` on your machine
-4. `f.remote(args)` sends the function call to the cloud container, returns the result
-5. `f.map(iterable)` sends calls in parallel
-6. On exit: deletes all cloud resources
+1. Your script runs locally
+2. When you call `f.remote(args)`, OpenModal spins up a machine on GCP, runs the function there, sends the result back
+3. When your script exits, the machine is deleted
 
 ### `openmodal deploy app.py`
 
-Persistent deployment. Creates resources and keeps them running until idle timeout.
+Deploy a server that stays up.
 
 ```bash
 openmodal deploy examples/vllm_serving.py
 ```
 
-What happens:
-1. Builds a Docker image via Cloud Build, pushes to Artifact Registry
-2. If the function has `gpu` + `@web_server`: uses GKE (Kubernetes)
-   - Creates a Deployment (keeps the pod running)
-   - Creates a LoadBalancer Service (public IP)
-   - Creates a CronJob (monitors idle connections, scales to 0 after `scaledown_window`)
-3. Otherwise: uses GCE (single VM with idle watchdog)
-4. Waits for health check to pass
-5. Prints the endpoint URL
+1. Builds a Docker image with your code and dependencies
+2. Starts it on a GPU machine
+3. Gives you a public URL
+4. After no traffic for `scaledown_window`, shuts everything down to save money
+5. You redeploy when you need it again
 
 ### `openmodal stop app-name`
 
-Deletes all resources for an app.
-
-```bash
-openmodal stop vllm-test
-```
+Shut it down now.
 
 ### `openmodal ps`
 
-Lists running containers.
+See what's running.
 
-```bash
-openmodal ps
+## What happens when you deploy a GPU server
+
+```
+You run: openmodal deploy vllm_serving.py
+
+Step 1: Build
+  Your image definition (debian_slim + pip install vllm + ...)
+  gets turned into a Dockerfile, built in the cloud, and stored.
+  Next time you deploy the same code, this step is skipped.
+
+Step 2: Start
+  OpenModal creates a Kubernetes pod requesting a GPU.
+  GKE sees "I need an H100" and spins up a spot GPU machine.
+  Your container starts on that machine, vLLM loads the model.
+
+Step 3: Serve
+  A public IP is assigned. You can send requests to it.
+  The deploy command prints the URL and exits.
+
+Step 4: Idle
+  A background job checks every minute: "is anyone using this?"
+  If no one has sent a request in 5 minutes (or whatever you set):
+    → The container is stopped
+    → The GPU machine is removed
+    → You stop paying
 ```
 
-## Under the hood
+## What happens when you call f.remote()
 
-### Provider auto-detection
+```
+You run: result = f.remote(42)
 
-OpenModal picks the right backend automatically:
+Step 1: A small machine is created on GCP
+Step 2: Your script file is copied to it
+Step 3: The machine imports your function and calls it with the arguments you passed
+Step 4: The result is sent back to your laptop
+Step 5: When your script exits, the machine is deleted
+```
 
-| Function has | Provider | Why |
+No bytecode serialization — your actual source file runs on the remote machine. This means the remote machine's Python version doesn't need to match yours.
+
+## Costs
+
+| State | What's running | Cost |
 |---|---|---|
-| `gpu` + `@web_server` | GKE | Needs auto-scaling, load balancing |
-| Everything else | GCE | Simpler, no cluster overhead |
+| Serving requests | GPU machine + small system machines | ~$3.50/hr (H100 spot) |
+| Idle, not yet scaled down | Same | Same |
+| Scaled to zero | Small system machines only | ~$0.10/hr (cluster) |
+| Cluster deleted | Nothing | $0 |
 
-Override with `OPENMODAL_PROVIDER=gke` or `OPENMODAL_PROVIDER=gce`.
+The `scaledown_window` controls how long the GPU stays after the last request. The cluster itself costs ~$73/mo to keep alive. If you're not using it for days, delete it to save that too.
 
-### GKE (GPU serving)
+## GKE vs GCE
 
-For `@web_server` functions with GPUs, OpenModal uses Google Kubernetes Engine:
+OpenModal picks the backend automatically:
 
-```
-openmodal deploy → Cloud Build (image) → GKE Deployment + Service + CronJob
-                                              ↓
-                                    Node autoscaler provisions GPU node
-                                              ↓
-                                    Pod starts, pulls image, runs vLLM
-                                              ↓
-                                    Health check passes → endpoint live
-                                              ↓
-                                    CronJob monitors every minute
-                                              ↓
-                                    No traffic for scaledown_window
-                                              ↓
-                                    Scales replicas to 0 → pod dies
-                                              ↓
-                                    Node autoscaler removes GPU node → $0
-```
+- **GPU server** (`gpu` + `@web_server`) → GKE (Kubernetes). Handles scaling, load balancing, public IPs.
+- **Everything else** → GCE (plain VMs). Simpler, no cluster needed.
 
-- GPU node pools use **spot instances** (~60-70% cheaper)
-- Images are cached in Artifact Registry (rebuild only when code changes)
-- The cluster auto-provisions on first deploy if it doesn't exist
-
-### GCE (compute functions)
-
-For `f.remote()` and `f.map()`, OpenModal creates GCE VMs:
-
-```
-f.remote(args) → Create GCE VM → Install Python + openmodal → Start agent
-                                              ↓
-                                    Send (module, function, args) to agent
-                                              ↓
-                                    Agent imports module, calls function
-                                              ↓
-                                    Returns result → VM deleted on exit
-```
-
-- Functions are shipped as source code (not pickled bytecode), so Python version mismatches don't matter
-- The openmodal package is installed in the VM so `import openmodal` works in your code
-- For custom images: Docker image is built once, agent is added on top
-
-### Image building
-
-Images are built via Google Cloud Build and pushed to Artifact Registry:
-
-```python
-image = openmodal.Image.debian_slim().pip_install("requests", "beautifulsoup4")
-```
-
-Becomes this Dockerfile:
-```dockerfile
-FROM ubuntu:24.04
-ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y python3 python3-pip ...
-RUN pip install requests beautifulsoup4
-RUN pip install openmodal
-COPY your_script.py /opt/your_script.py
-CMD ["python", "-m", "openmodal.runtime.web_server"]
-```
-
-Images are hash-tagged — if the Dockerfile hasn't changed, the build is skipped entirely.
-
-### Scale-to-zero
-
-For GKE deployments, a CronJob runs every minute:
-
-1. Check: is the pod Ready?  (if not, skip — still starting up)
-2. Check: are there active TCP connections on the serve port?
-3. If connections: update `last-active` timestamp
-4. If no connections and idle > `scaledown_window`: scale Deployment to 0 replicas
-5. GKE node autoscaler removes the empty GPU node (~5 min after pod is gone)
-
-Total time from last request to $0: `scaledown_window` + ~5 min.
+You don't need to think about this. It just works.

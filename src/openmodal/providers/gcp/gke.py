@@ -499,6 +499,9 @@ class GKEProvider(CloudProvider):
 
     def copy_to_pod(self, pod_name: str, local_path: str, remote_path: str):
         import subprocess
+        from pathlib import PurePosixPath
+        parent = str(PurePosixPath(remote_path).parent)
+        self.exec_in_pod(pod_name, "bash", "-c", f"mkdir -p {parent}")
         subprocess.run(
             ["kubectl", "cp", local_path, f"{NAMESPACE}/{pod_name}:{remote_path}"],
             check=True, capture_output=True,

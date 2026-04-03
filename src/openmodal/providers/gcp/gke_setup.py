@@ -35,7 +35,7 @@ def setup_cluster(gpu_types: list[str] | None = None, region: str = DEFAULT_REGI
     _run([
         "gcloud", "container", "clusters", "create", CLUSTER_NAME,
         f"--region={region}",
-        "--machine-type=e2-small",
+        "--machine-type=e2-standard-4",
         "--num-nodes=1",
         "--enable-autoscaling", "--min-nodes=0", "--max-nodes=1",
         "--addons=GcsFuseCsiDriver",

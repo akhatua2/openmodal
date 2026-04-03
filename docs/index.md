@@ -22,6 +22,7 @@ results = train.map(configs)
 - Sandboxes for SWE agents
 - Local Docker provider — no cloud account needed
 - GCP provider with spot GPUs (H100, A100, L4)
+- AWS provider with EKS, Karpenter, KEDA
 - CLI: `openmodal run`, `deploy`, `stop`, `ps`
 
 ## Quick start
@@ -44,6 +45,16 @@ results = train.map(configs)
     ```
 
     See the [setup guide](setup.md) for GCP prerequisites.
+
+=== "AWS"
+
+    ```bash
+    pip install "openmodal[aws]"
+    aws login
+    openmodal --aws run examples/hello_world.py
+    ```
+
+    Creates an EKS cluster on first run (~15 min one-time).
 
 ## How it compares to Modal
 

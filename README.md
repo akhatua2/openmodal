@@ -21,7 +21,8 @@ results = train.map(configs)
 - `f.local()`, `f.remote()`, `f.map()`
 - GPU serving with auto scale-to-zero
 - Custom images, secrets, retries, volumes
-- GKE with spot GPUs (H100, A100, L4)
+- GCP with spot GPUs (H100, A100, L4)
+- AWS with EKS, Karpenter, KEDA
 - Local Docker provider — no cloud account needed
 - CLI: `openmodal run`, `deploy`, `stop`, `ps`
 
@@ -36,6 +37,11 @@ openmodal --local run examples/hello_world.py
 # GCP
 gcloud auth login
 openmodal run examples/hello_world.py
+
+# AWS
+pip install "openmodal[aws]"
+aws login
+openmodal --aws run examples/hello_world.py
 ```
 
 [Setup guide](docs/setup.md) · [Examples](docs/examples/) · [Modal docs](https://modal.com/docs/guide) (same API, just swap the import)

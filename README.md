@@ -34,7 +34,7 @@ openmodal --aws run examples/hello_world.py     # AWS
 openmodal --azure run examples/hello_world.py   # Azure
 ```
 
-[Setup guide](docs/setup.md) · [Examples](docs/examples/) · [Modal docs](https://modal.com/docs/guide) (same API, just swap the import)
+[Setup guide](https://akhatua2.github.io/openmodal/setup/) · [Examples](https://akhatua2.github.io/openmodal/examples/) · [Modal docs](https://modal.com/docs/guide) (same API, just swap the import)
 
 ## License
 

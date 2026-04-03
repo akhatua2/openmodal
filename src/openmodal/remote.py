@@ -47,6 +47,21 @@ class RemoteExecutor:
         self.port = port
         self._base_url = f"http://{ip}:{port}"
 
+    def _start_log_stream(self):
+        import subprocess, sys
+        try:
+            self._log_proc = subprocess.Popen(
+                ["kubectl", "logs", "-f", self.instance_name, "-n", "default", "-c", "main"],
+                stdout=sys.stdout, stderr=subprocess.DEVNULL,
+            )
+        except Exception:
+            self._log_proc = None
+
+    def _stop_log_stream(self):
+        if hasattr(self, "_log_proc") and self._log_proc:
+            self._log_proc.terminate()
+            self._log_proc = None
+
     def execute(self, spec: FunctionSpec, *args: Any, retries: int = 0, **kwargs: Any) -> Any:
         import os
         last_error = None
@@ -60,19 +75,24 @@ class RemoteExecutor:
                 args_data = pickle.dumps((args, kwargs))
                 payload = header + b"\n" + args_data
 
+                self._start_log_stream()
+
                 req = urllib.request.Request(
                     f"{self._base_url}/execute",
                     data=payload,
                     headers={"Content-Type": "application/octet-stream"},
                     method="POST",
                 )
-                with urllib.request.urlopen(req, timeout=600) as resp:
+                with urllib.request.urlopen(req, timeout=6 * 60 * 60) as resp:
                     result = pickle.loads(resp.read())
+
+                self._stop_log_stream()
 
                 if not result["ok"]:
                     raise RuntimeError(f"Remote execution failed:\n{result['traceback']}")
                 return result["result"]
             except Exception as exc:
+                self._stop_log_stream()
                 last_error = exc
                 if attempt < retries:
                     logger.warning(f"Attempt {attempt + 1} failed, retrying ({retries - attempt} left)...")

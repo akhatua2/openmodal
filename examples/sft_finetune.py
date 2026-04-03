@@ -76,6 +76,9 @@ class TrainingConfig:
             self.experiment_name = f"{model_short}-r{self.lora_r}-{timestamp}"
 
 
+import os
+wandb_secret = openmodal.Secret.from_dict({"WANDB_API_KEY": os.environ.get("WANDB_API_KEY", "")})
+
 @app.function(
     image=train_image,
     gpu="H100",
@@ -84,6 +87,7 @@ class TrainingConfig:
         "/dataset_cache": dataset_cache,
         "/checkpoints": checkpoints,
     },
+    secrets=[wandb_secret],
     timeout=6 * 60 * 60,
     retries=3,
 )

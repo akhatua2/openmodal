@@ -59,6 +59,26 @@ def _build_pod_spec(
     if spec.source_file:
         env_vars.append(client.V1EnvVar(name="PYTHONPATH", value="/opt"))
 
+    for secret in (spec.secrets or []):
+        if hasattr(secret, "env_dict"):
+            for k, v in secret.env_dict.items():
+                env_vars.append(client.V1EnvVar(name=k, value=v))
+        elif hasattr(secret, "name") and secret.name:
+            from openmodal.providers.gcp.config import get_project
+            import subprocess, json
+            try:
+                result = subprocess.run(
+                    ["gcloud", "secrets", "versions", "access", "latest",
+                     f"--secret={secret.name}", f"--project={get_project()}"],
+                    capture_output=True, text=True,
+                )
+                if result.returncode == 0:
+                    secret_data = json.loads(result.stdout)
+                    for k, v in secret_data.items():
+                        env_vars.append(client.V1EnvVar(name=k, value=v))
+            except Exception:
+                pass
+
     container = client.V1Container(
         name="main",
         image=image_uri,

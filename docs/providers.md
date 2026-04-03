@@ -39,7 +39,7 @@ openmodal run examples/sandbox.py              # auto-detects GKE (sandboxes)
 
 You can also force a backend if needed: `OPENMODAL_PROVIDER=gce` or `OPENMODAL_PROVIDER=gke`.
 
-## AWS (in progress)
+## AWS
 
 Single EKS backend for all workloads — Karpenter auto-provisions the right instance type based on your GPU request.
 

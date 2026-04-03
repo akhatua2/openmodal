@@ -8,17 +8,10 @@
 - Harbor / SWE-bench integration
 - Local Docker provider (CPU and GPU)
 - GCP provider with spot GPUs (H100, A100, L4)
+- AWS provider with EKS, Karpenter, KEDA, ECR, S3
 - Published on [PyPI](https://pypi.org/project/openmodal/) with auto-publish on version bump
 
 ## What's next
-
-### AWS provider (in progress)
-
-EKS with Karpenter for auto-provisioning GPU nodes, KEDA for scale-to-zero, ECR for images, S3 Mountpoint CSI for volumes. Single EKS backend for all workloads — no EC2/EKS split.
-
-```bash
-openmodal --aws run examples/hello_world.py
-```
 
 ### Azure provider
 

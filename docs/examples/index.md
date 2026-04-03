@@ -18,3 +18,7 @@ the same code works with OpenModal on your own GCP infrastructure.
 ## Sandboxes
 
 - [Sandboxes](sandbox.md) — isolated containers for SWE agents, parallel execution
+
+## Benchmarks
+
+- [SWE-bench with Harbor](harbor.md) — run SWE-bench evaluations on your own GCP

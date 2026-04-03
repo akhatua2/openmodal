@@ -95,13 +95,16 @@ class Sandbox:
     ) -> Sandbox:
         from openmodal.providers.gcp.gke import get_provider
 
+        import re
         provider = get_provider()
         app_name = app.name if app else "sandbox"
-        pod_name = name or f"{app_name}-{uuid.uuid4().hex[:8]}"
+        safe_name = re.sub(r'[^a-z0-9-]', '-', app_name.lower()).strip('-')
+        pod_name = name or f"{safe_name}-{uuid.uuid4().hex[:8]}"
+        pod_name = re.sub(r'[^a-z0-9-]', '-', pod_name.lower()).strip('-')[:63]
 
         image_uri = None
         if image is not None:
-            image_uri = image.build_and_push(f"{app_name}-sandbox")
+            image_uri = image.build_and_push(f"{safe_name}-sandbox")
 
         env_vars = dict(env or {})
         for secret in (secrets or []):

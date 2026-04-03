@@ -1,9 +1,11 @@
 # OpenModal
 
-A cloud-agnostic runtime that implements [Modal](https://modal.com)'s Python interface. I built this because I wanted to run Modal on my own GCP account OpenModal lets you write the same code and run it on your own infrastructure.
+A cloud-agnostic runtime that implements [Modal](https://modal.com)'s Python interface.
+
+I built this because I wanted to run Modal on my own GCP account. Modal's API is clean and I didn't want to learn a different one. So OpenModal lets you write the same code and run it on your own infrastructure.
 
 ```python
-import openmodal  # swap this for modal and it works the same
+import openmodal
 
 app = openmodal.App("my-experiment")
 
@@ -17,17 +19,16 @@ results = train.map(configs)
 ## What works
 
 - `f.local()`, `f.remote()`, `f.map()`
+- GPU serving with auto scale-to-zero
 - Custom images, secrets, retries, volumes
-- `@web_server`, `@concurrent`
-- Async functions
+- GKE with spot GPUs (H100, A100, L4)
 - CLI: `openmodal run`, `deploy`, `stop`, `ps`
-
-GCP backend today. Provider abstraction for AWS/Azure is there, just needs implementing.
 
 ## Get started
 
 ```bash
-pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ openmodal
+pip install openmodal
+gcloud auth login
 openmodal run examples/hello_world.py
 ```
 

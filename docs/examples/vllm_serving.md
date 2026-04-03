@@ -1,101 +1,107 @@
-# vLLM GPU serving
+# GPU serving with vLLM
 
-This example deploys a Qwen3.5-35B-A3B model on a GCP H100 GPU
-using vLLM, with an OpenAI-compatible API endpoint.
+Deploy a model on a GPU and get an OpenAI-compatible endpoint. Scales to zero when idle, scales back up on next deploy.
 
 ## The code
 
 ```python
 import openmodal
 
-MODEL_NAME = "Qwen/Qwen3.5-35B-A3B-GPTQ-Int4"
-VLLM_PORT = 8000
+MODEL_NAME = "Qwen/Qwen3.5-0.8B"
 
 vllm_image = (
-    openmodal.Image.from_registry(
-        "nvidia/cuda:12.8.0-devel-ubuntu22.04", add_python="3.12"
-    )
+    openmodal.Image.from_registry("nvidia/cuda:12.8.0-devel-ubuntu22.04", add_python="3.12")
     .entrypoint([])
     .apt_install("git")
-    .uv_pip_install(
-        "vllm",
-        "huggingface-hub==0.36.0",
-        extra_options="--extra-index-url https://wheels.vllm.ai/nightly",
-    )
-    .pip_install(
-        "transformers @ git+https://github.com/huggingface/transformers.git@main"
-    )
-    .env({"HF_XET_HIGH_PERFORMANCE": "1"})
+    .uv_pip_install("vllm", "huggingface-hub==0.36.0",
+                    extra_options="--extra-index-url https://wheels.vllm.ai/nightly")
+    .pip_install("transformers @ git+https://github.com/huggingface/transformers.git@main")
 )
 
-hf_cache_vol = openmodal.Volume.from_name("huggingface-cache", create_if_missing=True)
-vllm_cache_vol = openmodal.Volume.from_name("vllm-cache", create_if_missing=True)
-
-app = openmodal.App("qwen35-vllm-serving")
+app = openmodal.App("vllm-test")
 
 @app.function(
     image=vllm_image,
-    gpu="H100:1",
-    scaledown_window=15 * 60,
+    gpu="H100",
+    scaledown_window=5 * 60,
     timeout=10 * 60,
-    volumes={
-        "/root/.cache/huggingface": hf_cache_vol,
-        "/root/.cache/vllm": vllm_cache_vol,
-    },
 )
-@openmodal.web_server(port=VLLM_PORT, startup_timeout=20 * 60)
-@openmodal.concurrent(max_inputs=32)
+@openmodal.web_server(port=8000, startup_timeout=20 * 60)
+@openmodal.concurrent(max_inputs=8)
 def serve():
     import subprocess
     subprocess.Popen([
         "vllm", "serve", MODEL_NAME,
-        "--host", "0.0.0.0",
-        "--port", str(VLLM_PORT),
+        "--host", "0.0.0.0", "--port", "8000",
         "--served-model-name", MODEL_NAME,
-        "--max-model-len", "131072",
-        "--gpu-memory-utilization", "0.92",
-        "--quantization", "gptq_marlin",
-        "--dtype", "bfloat16",
-        "--language-model-only",
-        "--enable-auto-tool-choice",
-        "--tool-call-parser", "qwen3_coder",
-        "--reasoning-parser", "qwen3",
-        "--enable-prefix-caching",
-        "--enable-chunked-prefill",
-        "--kv-cache-dtype", "fp8_e4m3",
+        "--max-model-len", "4096",
+        "--enforce-eager",
     ])
 ```
 
 ## Deploy
 
 ```bash
-openmodal deploy coopertrain/serve/vllm_openmodal.py
+openmodal deploy examples/vllm_serving.py
 ```
 
-This builds the Docker image, creates an H100 GPU VM, pulls the image,
-starts vLLM, and waits for the health check. The endpoint stays up
-until the idle timeout (15 minutes of no requests).
+First deploy builds the Docker image (~10 min), provisions an H100 spot GPU node, starts vLLM, and returns an endpoint:
 
-## Query the endpoint
+```
+openmodal deploy: vllm-test
+  building image...
+  image: us-central1-docker.pkg.dev/.../vllm-test:a9b8fa41ec13
+  creating container (H100)...
+  waiting for healthy (timeout: 1200s)...
+  serve => http://104.155.171.209:8000
+deploy complete.
+```
+
+Subsequent deploys skip the image build (cached) and reuse the endpoint.
+
+## Query
 
 ```bash
-curl http://<IP>:8000/v1/chat/completions \
+curl http://104.155.171.209:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -d '{
-    "model": "Qwen/Qwen3.5-35B-A3B-GPTQ-Int4",
-    "messages": [{"role": "user", "content": "Hello!"}],
-    "max_tokens": 64
-  }'
+  -d '{"model":"Qwen/Qwen3.5-0.8B","messages":[{"role":"user","content":"What is 2+2?"}],"max_tokens":16}'
 ```
 
-## What this demonstrates
+Works with any OpenAI-compatible client:
 
-| Feature | How it's used |
+```python
+from openai import OpenAI
+client = OpenAI(base_url="http://104.155.171.209:8000/v1", api_key="unused")
+resp = client.chat.completions.create(
+    model="Qwen/Qwen3.5-0.8B",
+    messages=[{"role": "user", "content": "What is 2+2?"}],
+)
+print(resp.choices[0].message.content)
+```
+
+## Scale-to-zero
+
+After `scaledown_window` (5 min in this example) of no traffic:
+
+1. Idle monitor detects no active connections
+2. Deployment scales to 0 replicas — pod terminated
+3. GKE node autoscaler removes the H100 GPU node (~5 min)
+4. GPU cost drops to $0
+
+Total time from last request to $0: `scaledown_window` + ~5 min node drain.
+
+## Stop manually
+
+```bash
+openmodal stop vllm-test
+```
+
+## How it works
+
+| Feature | Implementation |
 |---|---|
-| `Image.from_registry(...)` | CUDA base image with custom Python |
-| `.uv_pip_install(...)` | Fast package installation with uv |
-| `gpu="H100:1"` | Request GPU hardware |
-| `Volume.from_name(...)` | Persistent storage for model weights |
-| `@web_server(port=8000)` | Expose an HTTP endpoint |
-| `@concurrent(max_inputs=32)` | Handle 32 concurrent requests |
-| `scaledown_window=900` | Auto-shutdown after 15 min idle |
+| `gpu="H100"` | GKE spot GPU node pool, scales 0→1 on demand |
+| `@web_server(port=8000)` | Kubernetes Deployment + LoadBalancer Service |
+| `scaledown_window=300` | CronJob checks connections every minute |
+| `@concurrent(max_inputs=8)` | vLLM handles concurrency natively |
+| Image caching | Cloud Build + Artifact Registry, hash-based |

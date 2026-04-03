@@ -157,6 +157,19 @@ class GKEProvider(CloudProvider):
             setup_cluster()
         success(f"GKE cluster ready. ({int(spinner.elapsed)}s)")
 
+    def _delete_if_exists(self, delete_fn, read_fn, timeout: int = 30):
+        try:
+            delete_fn()
+        except client.exceptions.ApiException:
+            return
+        start = time.time()
+        while time.time() - start < timeout:
+            try:
+                read_fn()
+                time.sleep(2)
+            except client.exceptions.ApiException:
+                return
+
     def create_instance(
         self, spec: FunctionSpec, image_uri: str | None = None, name: str | None = None,
     ) -> tuple[str, str]:
@@ -186,12 +199,10 @@ class GKEProvider(CloudProvider):
         )
         deployment.spec.template.spec.restart_policy = "Always"
 
-        try:
-            self._apps_v1.delete_namespaced_deployment(name, NAMESPACE)
-            time.sleep(2)
-        except client.exceptions.ApiException:
-            pass
-
+        self._delete_if_exists(
+            lambda: self._apps_v1.delete_namespaced_deployment(name, NAMESPACE),
+            lambda: self._apps_v1.read_namespaced_deployment(name, NAMESPACE),
+        )
         self._apps_v1.create_namespaced_deployment(NAMESPACE, deployment)
 
         service = client.V1Service(
@@ -210,12 +221,10 @@ class GKEProvider(CloudProvider):
             ),
         )
 
-        try:
-            self._v1.delete_namespaced_service(name, NAMESPACE)
-            time.sleep(1)
-        except client.exceptions.ApiException:
-            pass
-
+        self._delete_if_exists(
+            lambda: self._v1.delete_namespaced_service(name, NAMESPACE),
+            lambda: self._v1.read_namespaced_service(name, NAMESPACE),
+        )
         self._v1.create_namespaced_service(NAMESPACE, service)
 
         if spec.scaledown_window > 0:
@@ -243,6 +252,8 @@ class GKEProvider(CloudProvider):
             'if [ "$REPLICAS" = "0" ]; then exit 0; fi; '
             'POD=$(kubectl get pods -n $NAMESPACE -l app=$DEPLOY -o jsonpath="{.items[0].metadata.name}" 2>/dev/null); '
             'if [ -z "$POD" ]; then exit 0; fi; '
+            'READY=$(kubectl get pod $POD -n $NAMESPACE -o jsonpath="{.status.conditions[?(@.type==\\"Ready\\")].status}" 2>/dev/null); '
+            'if [ "$READY" != "True" ]; then exit 0; fi; '
             'LAST=$(kubectl get pod $POD -n $NAMESPACE -o jsonpath="{.metadata.annotations.last-active}" 2>/dev/null); '
             'NOW=$(date +%s); '
             'CONNS=$(kubectl exec $POD -n $NAMESPACE -- sh -c "ss -tn | grep :$PORT | grep -c ESTAB" 2>/dev/null || echo 0); '

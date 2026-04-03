@@ -11,7 +11,7 @@ from pathlib import Path
 
 logger = logging.getLogger("openmodal.image")
 
-OPENMODAL_PIP_INSTALL = "RUN pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ openmodal"
+OPENMODAL_PIP_INSTALL = "RUN pip install openmodal"
 
 class Image:
     """Chainable builder that produces a Dockerfile and pushes to Artifact Registry."""

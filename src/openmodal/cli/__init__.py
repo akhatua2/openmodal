@@ -32,11 +32,15 @@ def load_app(app_path: str) -> App:
 
 @click.group()
 @click.option("-v", "--verbose", is_flag=True)
-def cli(verbose: bool):
+@click.option("--local", is_flag=True, help="Run on local Docker instead of cloud.")
+def cli(verbose: bool, local: bool):
+    import os
     logging.basicConfig(
         level=logging.DEBUG if verbose else logging.INFO,
         format="%(message)s",
     )
+    if local:
+        os.environ["OPENMODAL_PROVIDER"] = "local"
 
 
 from openmodal.cli.deploy import deploy  # noqa: E402

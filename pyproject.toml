@@ -1,7 +1,7 @@
 [project]
 name = "openmodal"
-version = "0.2.1"
-description = "Serverless GPU compute on GCP."
+version = "0.3.0"
+description = "Run Modal on your own cloud. Open-source, cloud-agnostic serverless GPU compute."
 requires-python = "==3.12.*"
 dependencies = [
     "click>=8.3",

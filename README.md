@@ -22,12 +22,18 @@ results = train.map(configs)
 - GPU serving with auto scale-to-zero
 - Custom images, secrets, retries, volumes
 - GKE with spot GPUs (H100, A100, L4)
+- Local Docker provider — no cloud account needed
 - CLI: `openmodal run`, `deploy`, `stop`, `ps`
 
 ## Get started
 
 ```bash
 pip install openmodal
+
+# Local (just needs Docker)
+openmodal --local run examples/hello_world.py
+
+# GCP
 gcloud auth login
 openmodal run examples/hello_world.py
 ```

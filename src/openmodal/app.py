@@ -28,14 +28,14 @@ class App:
         self.functions: dict[str, FunctionSpec] = {}
         self.local_entrypoints: dict[str, LocalEntrypointSpec] = {}
 
-    @classmethod
-    def lookup(cls, name: str, *, create_if_missing: bool = False) -> App:
-        return cls(name)
-
-    class _LookupAio:
-        async def __call__(self, name: str, *, create_if_missing: bool = False):
+    class _Lookup:
+        async def aio(self, name: str, *, create_if_missing: bool = False):
             return App(name)
-    lookup.aio = _LookupAio()
+
+        def __call__(self, name: str, *, create_if_missing: bool = False):
+            return App(name)
+
+    lookup = _Lookup()
 
     def function(
         self,

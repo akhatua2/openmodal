@@ -255,11 +255,20 @@ class LocalProvider(CloudProvider):
             check=True, capture_output=True,
         )
 
-    def stream_logs(self, instance_name: str):
+    def stream_logs(self, instance_name: str, *, follow: bool = True,
+                    tail: int | None = None, since: str | None = None,
+                    include_stderr: bool = False):
+        cmd = ["docker", "logs", instance_name]
+        if follow:
+            cmd.append("-f")
+        if tail is not None:
+            cmd += ["--tail", str(tail)]
+        if since:
+            cmd += ["--since", since]
         try:
             return subprocess.Popen(
-                ["docker", "logs", "-f", instance_name],
-                stdout=sys.stdout, stderr=subprocess.DEVNULL,
+                cmd, stdout=sys.stdout,
+                stderr=subprocess.STDOUT if include_stderr else subprocess.DEVNULL,
             )
         except Exception:
             return None

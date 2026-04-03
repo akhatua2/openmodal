@@ -27,7 +27,7 @@ results = train.map(configs)
 - AWS with EKS, Karpenter, KEDA
 - Azure with AKS, ACR, KEDA
 - Local Docker provider — no cloud account needed
-- CLI: `openmodal run`, `deploy`, `stop`, `ps`
+- CLI: `openmodal run`, `deploy`, `stop`, `ps`, `logs`
 
 ## Get started
 

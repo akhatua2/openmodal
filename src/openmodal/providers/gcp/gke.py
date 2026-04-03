@@ -564,13 +564,22 @@ class GKEProvider(CloudProvider):
         )
         return result.returncode == 0
 
-    def stream_logs(self, instance_name: str):
+    def stream_logs(self, instance_name: str, *, follow: bool = True,
+                    tail: int | None = None, since: str | None = None,
+                    include_stderr: bool = False):
         """Stream logs from a Kubernetes pod."""
         import subprocess, sys
+        cmd = ["kubectl", "logs", instance_name, "-n", NAMESPACE, "-c", "main"]
+        if follow:
+            cmd.append("-f")
+        if tail is not None:
+            cmd += ["--tail", str(tail)]
+        if since:
+            cmd += ["--since", since]
         try:
             return subprocess.Popen(
-                ["kubectl", "logs", "-f", instance_name, "-n", NAMESPACE, "-c", "main"],
-                stdout=sys.stdout, stderr=subprocess.DEVNULL,
+                cmd, stdout=sys.stdout,
+                stderr=subprocess.STDOUT if include_stderr else subprocess.DEVNULL,
             )
         except Exception:
             return None

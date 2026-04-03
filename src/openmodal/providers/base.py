@@ -60,7 +60,15 @@ class CloudProvider(abc.ABC):
         """Copy a file/directory from a running pod to the local filesystem."""
         raise NotImplementedError
 
-    def stream_logs(self, instance_name: str) -> subprocess.Popen | None:
+    def stream_logs(
+        self,
+        instance_name: str,
+        *,
+        follow: bool = True,
+        tail: int | None = None,
+        since: str | None = None,
+        include_stderr: bool = False,
+    ) -> subprocess.Popen | None:
         """Stream logs from an instance. Returns a Popen object or None."""
         raise NotImplementedError
 

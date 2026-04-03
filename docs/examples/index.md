@@ -19,6 +19,10 @@ the same code works with OpenModal on your own GCP infrastructure.
 
 - [Sandboxes](sandbox.md) — isolated containers for SWE agents, parallel execution
 
+## Training
+
+- [SFT finetuning](sft_finetune.md) — LoRA finetuning with Unsloth on a single H100
+
 ## Benchmarks
 
 - [SWE-bench with Harbor](harbor.md) — run SWE-bench evaluations on your own GCP

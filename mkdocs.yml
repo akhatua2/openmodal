@@ -31,6 +31,7 @@ nav:
     - Web Scraper: examples/web_scraper.md
     - vLLM Serving: examples/vllm_serving.md
     - Sandboxes: examples/sandbox.md
+    - SFT Finetuning: examples/sft_finetune.md
     - SWE-bench with Harbor: examples/harbor.md
   - Roadmap: roadmap.md
 

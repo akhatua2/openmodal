@@ -150,11 +150,16 @@ class EKSProvider(CloudProvider):
             raise RuntimeError("AWS credentials not configured. Run: aws configure")
 
     def __init__(self):
-        try:
+        # Always point kubectl at our EKS cluster before loading config.
+        # Without this, kubectl might be pointing at a different cluster
+        # (e.g. a GKE or AKS cluster from a previous session), and pods
+        # would be created on the wrong provider.
+        from openmodal.providers.aws.eks_setup import cluster_exists, update_kubeconfig
+
+        if cluster_exists():
+            update_kubeconfig()
             config.load_kube_config()
-            # Verify we can reach the cluster
-            client.CoreV1Api().list_namespace(limit=1)
-        except Exception:
+        else:
             self._auto_provision_cluster()
             config.load_kube_config()
         self._v1 = client.CoreV1Api()
@@ -162,11 +167,7 @@ class EKSProvider(CloudProvider):
 
     def _auto_provision_cluster(self):
         from openmodal.cli.console import Spinner, success
-        from openmodal.providers.aws.eks_setup import cluster_exists, update_kubeconfig, setup_cluster
-
-        if cluster_exists():
-            update_kubeconfig()
-            return
+        from openmodal.providers.aws.eks_setup import setup_cluster
 
         with Spinner("Creating EKS cluster (one-time, ~15 min)...") as spinner:
             setup_cluster()

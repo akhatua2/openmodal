@@ -158,32 +158,46 @@ class GKEProvider(CloudProvider):
             raise RuntimeError("No GCP project set. Run: gcloud config set project YOUR_PROJECT_ID")
 
     def __init__(self):
-        try:
-            config.load_kube_config()
-        except Exception:
-            self._auto_provision_cluster()
-            config.load_kube_config()
+        # Always point kubectl at our GKE cluster before loading config.
+        # Without this, kubectl might be pointing at a different cluster
+        # (e.g. an AKS or EKS cluster from a previous session), and pods
+        # would be created on the wrong provider.
+        self._ensure_gke_context()
         self._v1 = client.CoreV1Api()
         self._apps_v1 = client.AppsV1Api()
 
-    def _auto_provision_cluster(self):
-        from openmodal.cli.console import Spinner, success
-        from openmodal.providers.gcp.gke_setup import setup_cluster, CLUSTER_NAME
+    def _ensure_gke_context(self):
+        """Make sure kubectl is pointing at our GKE cluster, not some other cluster."""
+        from openmodal.providers.gcp.gke_setup import CLUSTER_NAME
         from openmodal.providers.gcp.config import get_project, DEFAULT_REGION
 
         import subprocess
+        project = get_project()
+        region = DEFAULT_REGION
+
+        # Check if the cluster exists
         result = subprocess.run(
             ["gcloud", "container", "clusters", "list",
-             f"--region={DEFAULT_REGION}", f"--project={get_project()}",
+             f"--region={region}", f"--project={project}",
              "--format=value(name)"],
             capture_output=True, text=True,
         )
+
         if CLUSTER_NAME in result.stdout:
+            # Cluster exists — fetch credentials so kubectl points at it
             subprocess.run([
                 "gcloud", "container", "clusters", "get-credentials", CLUSTER_NAME,
-                f"--region={DEFAULT_REGION}", f"--project={get_project()}",
+                f"--region={region}", f"--project={project}",
             ], capture_output=True, check=True)
-            return
+            config.load_kube_config()
+        else:
+            # No cluster yet — create one
+            self._auto_provision_cluster()
+            config.load_kube_config()
+
+    def _auto_provision_cluster(self):
+        from openmodal.cli.console import Spinner, success
+        from openmodal.providers.gcp.gke_setup import setup_cluster
 
         with Spinner("Creating GKE cluster (one-time, ~5 min)...") as spinner:
             setup_cluster()
@@ -390,14 +404,23 @@ class GKEProvider(CloudProvider):
             events = self._v1.list_namespaced_event(
                 NAMESPACE, field_selector=f"involvedObject.name={name}",
             )
-            messages = []
-            for e in events.items:
-                if e.type == "Warning" or e.reason in (
-                    "FailedScheduling", "Failed", "BackOff", "ErrImagePull", "ImagePullBackOff",
-                ):
-                    messages.append(f"{e.reason}: {e.message}")
-            if messages:
-                return messages[-1]
+            for e in reversed(events.items):
+                if e.reason == "FailedScheduling":
+                    msg = e.message or ""
+                    if "node affinity" in msg or "nodeSelector" in msg.lower() or "didn't match" in msg:
+                        return (
+                            "No GPU nodes available. This usually means the GPU node pool "
+                            "couldn't scale up — either you don't have quota for this GPU type, "
+                            "or spot instances aren't available right now. "
+                            "Check your quota: gcloud compute regions describe us-central1 --format='value(quotas)'"
+                        )
+                    if "insufficient" in msg.lower():
+                        return f"Not enough resources to schedule the pod: {msg}"
+                    return f"Pod couldn't be scheduled: {msg}"
+                if e.reason in ("ErrImagePull", "ImagePullBackOff"):
+                    return f"Failed to pull container image: {e.message}"
+                if e.reason == "BackOff":
+                    return f"Container keeps crashing: {e.message}"
 
             pod = self._v1.read_namespaced_pod(name, NAMESPACE)
             if pod.status.phase == "Pending":

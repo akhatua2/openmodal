@@ -371,22 +371,27 @@ class AKSProvider(CloudProvider):
         raise RuntimeError(f"Pod {name} not ready after {timeout}s: {reason}")
 
     def _get_pod_failure_reason(self, name: str) -> str:
+        """Check events in priority order: mount errors > image pull > crash > scheduling."""
         try:
             events = self._v1.list_namespaced_event(
                 NAMESPACE, field_selector=f"involvedObject.name={name}",
             )
-            messages = []
-            for e in events.items:
-                if e.type == "Warning" or e.reason in (
-                    "FailedScheduling", "Failed", "BackOff", "ErrImagePull", "ImagePullBackOff",
-                ):
-                    messages.append(f"{e.reason}: {e.message}")
-            if messages:
-                return messages[-1]
+            for e in reversed(events.items):
+                if e.reason == "FailedMount":
+                    return f"Volume mount failed: {e.message}"
+            for e in reversed(events.items):
+                if e.reason in ("ErrImagePull", "ImagePullBackOff"):
+                    return f"Failed to pull container image: {e.message}"
+            for e in reversed(events.items):
+                if e.reason == "BackOff":
+                    return f"Container keeps crashing: {e.message}"
 
             pod = self._v1.read_namespaced_pod(name, NAMESPACE)
             if pod.status.phase == "Pending":
-                return "Pod is still Pending — likely waiting for a GPU node to scale up. Check your quota."
+                for e in reversed(events.items):
+                    if e.reason == "FailedScheduling":
+                        return f"Pod couldn't be scheduled: {e.message}"
+                return "Pod is still Pending — likely waiting for a GPU node to scale up."
             return f"Pod status: {pod.status.phase}"
         except Exception:
             return "Could not determine reason. Run 'kubectl describe pod' for details."

@@ -399,32 +399,58 @@ class GKEProvider(CloudProvider):
         raise RuntimeError(f"Pod {name} not ready after {timeout}s: {reason}")
 
     def _get_pod_failure_reason(self, name: str) -> str:
-        """Query pod events and status to produce a human-readable failure reason."""
+        """Query pod events and status to produce a human-readable failure reason.
+
+        Events are checked in priority order: mount/permission errors first
+        (they indicate the pod scheduled but can't start), then image pull
+        errors, then scheduling errors. This avoids returning a stale
+        FailedScheduling event when the real problem is a FailedMount.
+        """
         try:
             events = self._v1.list_namespaced_event(
                 NAMESPACE, field_selector=f"involvedObject.name={name}",
             )
+
+            # Priority 1: Mount/permission errors — pod scheduled but volumes can't attach
             for e in reversed(events.items):
-                if e.reason == "FailedScheduling":
+                if e.reason == "FailedMount":
                     msg = e.message or ""
-                    if "node affinity" in msg or "nodeSelector" in msg.lower() or "didn't match" in msg:
+                    if "PermissionDenied" in msg or "403" in msg:
                         return (
-                            "No GPU nodes available. This usually means the GPU node pool "
-                            "couldn't scale up — either you don't have quota for this GPU type, "
-                            "or spot instances aren't available right now. "
-                            "Check your quota: gcloud compute regions describe us-central1 --format='value(quotas)'"
+                            "Volume mount failed — permission denied. "
+                            "The GKE node service account doesn't have access to the storage bucket. "
+                            "Re-create the volume or run 'openmodal setup gcp'."
                         )
-                    if "insufficient" in msg.lower():
-                        return f"Not enough resources to schedule the pod: {msg}"
-                    return f"Pod couldn't be scheduled: {msg}"
+                    return f"Volume mount failed: {msg}"
+
+            # Priority 2: Image pull errors
+            for e in reversed(events.items):
                 if e.reason in ("ErrImagePull", "ImagePullBackOff"):
                     return f"Failed to pull container image: {e.message}"
+
+            # Priority 3: Container crash loops
+            for e in reversed(events.items):
                 if e.reason == "BackOff":
                     return f"Container keeps crashing: {e.message}"
 
+            # Priority 4: Scheduling errors (only if pod never got scheduled)
             pod = self._v1.read_namespaced_pod(name, NAMESPACE)
             if pod.status.phase == "Pending":
+                for e in reversed(events.items):
+                    if e.reason == "FailedScheduling":
+                        msg = e.message or ""
+                        if "node affinity" in msg or "nodeSelector" in msg.lower() or "didn't match" in msg:
+                            return (
+                                "No GPU nodes available. This usually means the GPU node pool "
+                                "couldn't scale up — either you don't have quota for this GPU type, "
+                                "or spot instances aren't available right now. "
+                                "Check your quota: gcloud compute regions describe us-central1 --format='value(quotas)'"
+                            )
+                        if "insufficient" in msg.lower():
+                            return f"Not enough resources to schedule the pod: {msg}"
+                        return f"Pod couldn't be scheduled: {msg}"
                 return "Pod is still Pending — likely waiting for a GPU node to scale up. Check your quota."
+
             return f"Pod status: {pod.status.phase}"
         except Exception:
             return "Could not determine reason. Run 'kubectl describe pod' for details."

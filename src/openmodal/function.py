@@ -28,3 +28,4 @@ class FunctionSpec:
     source_file: str | None = None
     module_name: str | None = None
     qualname: str | None = None
+    _app_name: str = ""

@@ -50,7 +50,7 @@ class RemoteExecutor:
 
     def execute(self, spec: FunctionSpec, *args: Any, retries: int = 0, **kwargs: Any) -> Any:
         import os
-        last_error = None
+        last_error: Exception | None = None
         for attempt in range(1 + retries):
             try:
                 remote_module = (
@@ -87,6 +87,7 @@ class RemoteExecutor:
                 if attempt < retries:
                     logger.warning(f"Attempt {attempt + 1} failed, retrying ({retries - attempt} left)...")
                     time.sleep(min(2 ** attempt, 30))
+        assert last_error is not None
         raise last_error
 
     def map(self, spec: FunctionSpec, iterable: Any, *, retries: int = 0, max_workers: int = 8) -> Iterator[Any]:
@@ -140,10 +141,20 @@ def _create_agent_instance(app_name: str, func_name: str, spec: FunctionSpec) ->
         elapsed_ready = int(spinner.elapsed)
 
     success(f"Container ready. ({elapsed_create + elapsed_ready}s total)")
+
+    # Start background metrics collection so `openmodal monitor` has data
+    from openmodal.monitor.collector import MetricsCollector
+    from openmodal.monitor.history import MetricsHistory
+    history = MetricsHistory()
+    collector = MetricsCollector(provider, instance_name, history)
+    collector.start()
+    _collectors[instance_name] = collector
+
     return RemoteExecutor(instance_name, ip, AGENT_PORT)
 
 
 _executors: dict[str, RemoteExecutor] = {}
+_collectors: dict = {}
 
 
 def get_executor(app_name: str, func_name: str, spec: FunctionSpec) -> RemoteExecutor:
@@ -154,6 +165,11 @@ def get_executor(app_name: str, func_name: str, spec: FunctionSpec) -> RemoteExe
 
 
 def shutdown_all():
+    # Stop metrics collectors and save history
+    for collector in _collectors.values():
+        collector.stop()
+    _collectors.clear()
+
     if not _executors:
         return
     from openmodal.cli.console import Spinner, success

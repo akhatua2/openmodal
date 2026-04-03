@@ -57,7 +57,14 @@ class CloudProvider(abc.ABC):
         """Create an ephemeral sandbox pod/instance."""
         raise NotImplementedError
 
-    def exec_in_pod(self, pod_name: str, *args: str, workdir: str | None = None, env: dict[str, str] | None = None):
+    def exec_in_pod(
+        self,
+        pod_name: str,
+        *args: str,
+        workdir: str | None = None,
+        env: dict[str, str] | None = None,
+        container: str = "main",
+    ):
         """Execute a command in a running pod. Returns ContainerProcess."""
         raise NotImplementedError
 

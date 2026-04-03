@@ -227,7 +227,14 @@ class LocalProvider(CloudProvider):
                 return
             time.sleep(1)
 
-    def exec_in_pod(self, pod_name: str, *args: str, workdir: str | None = None, env: dict[str, str] | None = None):
+    def exec_in_pod(
+        self,
+        pod_name: str,
+        *args: str,
+        workdir: str | None = None,
+        env: dict[str, str] | None = None,
+        container: str = "main",
+    ):
         from openmodal.process import ContainerProcess
 
         command = list(args)

@@ -577,7 +577,14 @@ class GKEProvider(CloudProvider):
         self._v1.create_namespaced_pod(NAMESPACE, pod)
         self._wait_for_pod_running(name)
 
-    def exec_in_pod(self, pod_name: str, *args: str, workdir: str | None = None, env: dict[str, str] | None = None):
+    def exec_in_pod(
+        self,
+        pod_name: str,
+        *args: str,
+        workdir: str | None = None,
+        env: dict[str, str] | None = None,
+        container: str = "main",
+    ):
         from kubernetes.stream import stream
 
         from openmodal.process import ContainerProcess
@@ -600,6 +607,7 @@ class GKEProvider(CloudProvider):
             self._v1.connect_get_namespaced_pod_exec,
             name=pod_name,
             namespace=NAMESPACE,
+            container=container,
             command=command,
             stderr=True,
             stdout=True,

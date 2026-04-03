@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.6 (2026-04-03)
+
+### Added
+- **`openmodal monitor`** — live resource utilization dashboard showing GPU, VRAM, CPU, and memory sparkline graphs
+- Background metrics collection starts automatically during `openmodal run` — `monitor` shows full history even if started later
+- Saved metrics persist to `~/.openmodal/metrics/` — view after runs complete with `openmodal monitor <app>`
+- `exec_in_pod` now supports `container` parameter for multi-container pods
+- `rich` dependency for terminal UI
+
 ## 0.3.5 (2026-04-03)
 
 ### Added

@@ -11,12 +11,12 @@ class Volume:
     def __init__(self, name: str, *, uri: str | None = None):
         self.name = name
         self._uri = uri
+        self._create_if_missing = False
 
     @classmethod
     def from_name(cls, name: str, *, create_if_missing: bool = False) -> Volume:
         vol = cls(name)
-        if create_if_missing:
-            vol.ensure()
+        vol._create_if_missing = create_if_missing
         return vol
 
     @property

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.5 (2026-04-03)
+
+### Fixed
+- `Volume.from_name()` is now lazy — no longer tries to create buckets at import time, which was crashing inside remote containers where cloud CLIs aren't installed
+
 ## 0.3.4 (2026-04-03)
 
 ### Changed

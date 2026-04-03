@@ -9,10 +9,10 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - uses: actions/setup-python@v5
         with:
@@ -23,8 +23,9 @@ jobs:
         run: |
           pip install tomli
           NEW=$(python -c "import tomli; print(tomli.load(open('pyproject.toml','rb'))['project']['version'])")
-          echo "version=$NEW" >> "$GITHUB_OUTPUT"
-          pip install openmodal 2>/dev/null && OLD=$(python -c "import openmodal; print(openmodal.__version__)" 2>/dev/null) || OLD="none"
+          git show HEAD~1:pyproject.toml > /tmp/old_pyproject.toml 2>/dev/null || echo '[project]\nversion = "0.0.0"' > /tmp/old_pyproject.toml
+          OLD=$(python -c "import tomli; print(tomli.load(open('/tmp/old_pyproject.toml','rb'))['project']['version'])")
+          echo "new=$NEW old=$OLD"
           if [ "$NEW" != "$OLD" ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           else
@@ -39,6 +40,9 @@ jobs:
 
       - name: Publish to PyPI
         if: steps.version.outputs.changed == 'true'
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_KEY }}
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_KEY }}
+        run: |
+          pip install twine
+          twine upload dist/*

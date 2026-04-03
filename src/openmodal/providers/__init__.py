@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 
-def get_provider(spec=None):
+def get_provider(spec=None, *, sandbox: bool = False):
     import os
     from openmodal.function import FunctionSpec
 
     override = os.environ.get("OPENMODAL_PROVIDER")
     if override:
         backend = override
+    elif sandbox:
+        backend = "gke"
     elif spec and isinstance(spec, FunctionSpec) and spec.gpu and (spec.web_server_port or spec.volumes):
         backend = "gke"
     else:

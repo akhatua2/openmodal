@@ -96,7 +96,7 @@ class Sandbox:
         from openmodal.providers import get_provider
 
         import re
-        provider = get_provider()
+        provider = get_provider(sandbox=True)
         app_name = app.name if app else "sandbox"
         safe_name = re.sub(r'[^a-z0-9-]', '-', app_name.lower()).strip('-')
         pod_name = name or f"{safe_name}-{uuid.uuid4().hex[:8]}"

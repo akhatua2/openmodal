@@ -16,6 +16,8 @@ import openmodal
 
 app = openmodal.App("sft-finetune")
 
+import os
+
 train_image = (
     openmodal.Image.debian_slim()
     .uv_pip_install(
@@ -30,6 +32,7 @@ train_image = (
         "unsloth_zoo==2025.7.10",
     )
     .env({"HF_HOME": "/model_cache"})
+    .pip_install("wandb==0.21.0")
 )
 
 model_cache = openmodal.Volume.from_name("sft-model-cache", create_if_missing=True)
@@ -85,8 +88,17 @@ class TrainingConfig:
     retries=3,
 )
 def finetune(config: TrainingConfig):
+    import os
     import unsloth  # noqa: F401
     import datasets
+    import wandb
+
+    if os.environ.get("WANDB_API_KEY"):
+        wandb.init(
+            project="openmodal-sft",
+            name=config.experiment_name,
+            config=config.__dict__,
+        )
     import torch
     from transformers import TrainingArguments
     from trl import SFTTrainer

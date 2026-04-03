@@ -26,7 +26,7 @@ def _get_provider(spec: FunctionSpec | None = None):
     override = os.environ.get("OPENMODAL_PROVIDER")
     if override:
         backend = override
-    elif spec and spec.web_server_port and spec.gpu:
+    elif spec and spec.gpu and (spec.web_server_port or spec.volumes):
         backend = "gke"
     else:
         backend = "gce"

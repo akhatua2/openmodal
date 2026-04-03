@@ -145,6 +145,18 @@ def _build_pod_spec(
 
 
 class GKEProvider(CloudProvider):
+    def preflight_check(self, spec):
+        import shutil, subprocess
+        if not shutil.which("gcloud"):
+            raise RuntimeError("gcloud CLI not found. Run 'openmodal setup gcp' to get started.")
+        result = subprocess.run(
+            ["gcloud", "config", "get-value", "project"],
+            capture_output=True, text=True,
+        )
+        project = result.stdout.strip() if result.returncode == 0 else ""
+        if not project or project == "(unset)":
+            raise RuntimeError("No GCP project set. Run: gcloud config set project YOUR_PROJECT_ID")
+
     def __init__(self):
         try:
             config.load_kube_config()

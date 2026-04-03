@@ -138,6 +138,17 @@ def _build_pod_spec(
 
 
 class EKSProvider(CloudProvider):
+    def preflight_check(self, spec):
+        import shutil, subprocess
+        if not shutil.which("aws"):
+            raise RuntimeError("aws CLI not found. Run 'openmodal setup aws' to get started.")
+        result = subprocess.run(
+            ["aws", "sts", "get-caller-identity"],
+            capture_output=True, text=True,
+        )
+        if result.returncode != 0:
+            raise RuntimeError("AWS credentials not configured. Run: aws configure")
+
     def __init__(self):
         try:
             config.load_kube_config()

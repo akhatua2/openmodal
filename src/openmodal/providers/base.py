@@ -36,6 +36,10 @@ class CloudProvider(abc.ABC):
     def instance_name(self, app_name: str, func_name: str, suffix: str = "") -> str:
         ...
 
+    def preflight_check(self, spec: FunctionSpec) -> None:
+        """Fast check that the provider is ready. Called before image build."""
+        pass
+
     def build_image(self, dockerfile_dir: str, name: str, tag: str) -> str:
         """Build and push a container image. Returns the full image URI."""
         raise NotImplementedError

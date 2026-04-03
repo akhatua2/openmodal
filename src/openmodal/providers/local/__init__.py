@@ -45,8 +45,8 @@ def _check_gpu(requested: str):
     """Validate that the requested GPU type is available locally."""
     if not _has_nvidia_gpu():
         raise RuntimeError(
-            f"You requested a {requested}, but this machine doesn't have any GPUs available. "
-            f"Drop the --local flag and we'll spin it up on cloud GPUs for you."
+            f"This machine doesn't have a {requested} (wouldn't that be nice :P). "
+            f"Remove --local to run on cloud GPUs."
         )
     local_gpus = _get_local_gpus()
     if not local_gpus:
@@ -55,13 +55,19 @@ def _check_gpu(requested: str):
     req = requested.lower()
     if not any(req in gpu.lower() for gpu in local_gpus):
         raise RuntimeError(
-            f"You requested a {requested}, but this machine has: {', '.join(local_gpus)}. "
-            f"Either change the gpu parameter to match your hardware, "
-            f"or drop the --local flag and we'll spin it up on cloud GPUs for you."
+            f"You asked for a {requested} but this machine has: {', '.join(local_gpus)}. "
+            f"Close, but no cigar :P Remove --local to run on cloud GPUs."
         )
 
 
 class LocalProvider(CloudProvider):
+
+    def preflight_check(self, spec):
+        result = subprocess.run(["docker", "info"], capture_output=True)
+        if result.returncode != 0:
+            raise RuntimeError("Docker is not running. Start Docker and try again.")
+        if spec.gpu:
+            _check_gpu(spec.gpu)
 
     def _ensure_default_agent_image(self, source_file: str | None = None) -> str:
         from openmodal.image import Image, OPENMODAL_PIP_INSTALL

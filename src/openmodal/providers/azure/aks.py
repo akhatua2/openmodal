@@ -142,6 +142,17 @@ def _build_pod_spec(
 
 
 class AKSProvider(CloudProvider):
+    def preflight_check(self, spec):
+        import shutil, subprocess
+        if not shutil.which("az"):
+            raise RuntimeError("az CLI not found. Run 'openmodal setup azure' to get started.")
+        result = subprocess.run(
+            ["az", "account", "show"],
+            capture_output=True, text=True,
+        )
+        if result.returncode != 0:
+            raise RuntimeError("Not logged in to Azure. Run: az login")
+
     def __init__(self):
         from openmodal.providers.azure.aks_setup import cluster_exists, update_kubeconfig
         # Always check if AKS cluster exists and switch context to it

@@ -53,3 +53,8 @@ class Spinner:
 def success(message: str):
     sys.stderr.write(f"\r\033[K\u2713 {message}\n")
     sys.stderr.flush()
+
+
+def fail(message: str):
+    sys.stderr.write(f"\r\033[K\u2717 {message}\n")
+    sys.stderr.flush()

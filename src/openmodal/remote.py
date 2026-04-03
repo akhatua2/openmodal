@@ -97,6 +97,12 @@ def _create_agent_instance(app_name: str, func_name: str, spec: FunctionSpec) ->
     from openmodal.cli.console import Spinner, success
 
     provider = _get_provider(spec)
+    try:
+        provider.preflight_check(spec)
+    except RuntimeError as e:
+        from openmodal.cli.console import fail
+        fail(str(e))
+        raise SystemExit(1)
     instance_name = app_name.lower().replace("_", "-")
     spec._app_name = app_name
 

@@ -65,3 +65,33 @@ hello 1000
 ```
 
 OpenModal auto-detects the right backend: GKE for GPU workloads and sandboxes, GCE for simple compute.
+
+## AWS
+
+### Prerequisites
+
+- AWS account
+- `aws` CLI installed and authenticated
+- `eksctl` installed (for cluster creation)
+- `helm` installed (for Karpenter and KEDA)
+- Docker installed (for image building)
+
+### Authenticate
+
+```bash
+aws login
+```
+
+### Install AWS extras
+
+```bash
+pip install "openmodal[aws]"
+```
+
+### Verify
+
+```bash
+openmodal --aws run examples/hello_world.py
+```
+
+On first run, OpenModal creates an EKS cluster (~15 min one-time setup). After that, it reuses the existing cluster.

@@ -58,7 +58,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 export PATH="/root/.local/bin:$PATH"
 uv python install {py_version}
 UV_PYTHON=$(uv python find {py_version})
-$UV_PYTHON -m pip install --break-system-packages -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ openmodal
+$UV_PYTHON -m pip install --break-system-packages openmodal
 {source_block}
 export PYTHONPATH=/opt
 {secrets_block}echo "{agent_encoded}" | base64 -d > /opt/openmodal_agent.py

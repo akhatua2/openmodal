@@ -32,6 +32,7 @@ nav:
     - vLLM Serving: examples/vllm_serving.md
     - Sandboxes: examples/sandbox.md
     - SWE-bench with Harbor: examples/harbor.md
+  - Roadmap: roadmap.md
 
 markdown_extensions:
   - pymdownx.highlight:

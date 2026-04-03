@@ -6,10 +6,11 @@ A cloud-agnostic runtime that implements [Modal](https://modal.com)'s Python int
 
 I built this because I wanted to run Modal on my own GCP account. Modal's API is clean and I didn't want to learn a different one. So OpenModal lets you write the same code and run it on your own infrastructure.
 
-```python
-import openmodal
+```diff
+- import modal
++ import openmodal as modal
 
-app = openmodal.App("my-experiment")
+app = modal.App("my-experiment")
 
 @app.function(gpu="H100")
 def train(config):
@@ -17,17 +18,6 @@ def train(config):
 
 results = train.map(configs)
 ```
-
-## What works
-
-- `f.local()`, `f.remote()`, `f.map()`
-- GPU serving with auto scale-to-zero
-- Custom images, secrets, retries, volumes
-- GCP with spot GPUs (H100, A100, L4)
-- AWS with EKS, Karpenter, KEDA
-- Azure with AKS, ACR, KEDA
-- Local Docker provider — no cloud account needed
-- CLI: `openmodal run`, `deploy`, `stop`, `ps`, `logs`
 
 ## Get started
 
@@ -39,7 +29,7 @@ openmodal setup
 
 # Or just run directly
 openmodal --local run examples/hello_world.py   # Local (just needs Docker)
-openmodal run examples/hello_world.py           # GCP (default)
+openmodal --gcp run examples/hello_world.py      # GCP (default)
 openmodal --aws run examples/hello_world.py     # AWS
 openmodal --azure run examples/hello_world.py   # Azure
 ```

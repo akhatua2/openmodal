@@ -307,7 +307,8 @@ class EKSProvider(CloudProvider):
             pass
 
         self._v1.create_namespaced_pod(NAMESPACE, pod)
-        self._wait_for_pod_running(name)
+        timeout = 1200 if spec.gpu else 600
+        self._wait_for_pod_running(name, timeout=timeout)
 
         # EKS pod IPs aren't directly routable from the client machine,
         # so we use kubectl port-forward to proxy the connection.
@@ -354,7 +355,32 @@ class EKSProvider(CloudProvider):
                     return
             if pod.status.phase in ("Failed", "Unknown"):
                 w.stop()
-                raise RuntimeError(f"Pod {name} entered {pod.status.phase} state")
+                reason = self._get_pod_failure_reason(name)
+                raise RuntimeError(f"Pod {name} failed: {reason}")
+
+        reason = self._get_pod_failure_reason(name)
+        raise RuntimeError(f"Pod {name} not ready after {timeout}s: {reason}")
+
+    def _get_pod_failure_reason(self, name: str) -> str:
+        try:
+            events = self._v1.list_namespaced_event(
+                NAMESPACE, field_selector=f"involvedObject.name={name}",
+            )
+            messages = []
+            for e in events.items:
+                if e.type == "Warning" or e.reason in (
+                    "FailedScheduling", "Failed", "BackOff", "ErrImagePull", "ImagePullBackOff",
+                ):
+                    messages.append(f"{e.reason}: {e.message}")
+            if messages:
+                return messages[-1]
+
+            pod = self._v1.read_namespaced_pod(name, NAMESPACE)
+            if pod.status.phase == "Pending":
+                return "Pod is still Pending — likely waiting for a GPU node to scale up. Check your quota."
+            return f"Pod status: {pod.status.phase}"
+        except Exception:
+            return "Could not determine reason. Run 'kubectl describe pod' for details."
 
     def delete_instance(self, instance_name: str) -> None:
         # Kill port-forward if running

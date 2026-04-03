@@ -33,9 +33,10 @@ def load_app(app_path: str) -> App:
 @click.group()
 @click.option("-v", "--verbose", is_flag=True)
 @click.option("--local", is_flag=True, help="Run on local Docker instead of cloud.")
+@click.option("--gcp", is_flag=True, help="Run on GCP GKE (default).")
 @click.option("--aws", is_flag=True, help="Run on AWS EKS.")
 @click.option("--azure", is_flag=True, help="Run on Azure AKS.")
-def cli(verbose: bool, local: bool, aws: bool, azure: bool):
+def cli(verbose: bool, local: bool, gcp: bool, aws: bool, azure: bool):
     import os
     logging.basicConfig(
         level=logging.DEBUG if verbose else logging.INFO,

@@ -6,14 +6,12 @@ import hashlib
 import logging
 import os
 import shutil
-import subprocess
 import tempfile
 from pathlib import Path
 
-from openmodal.providers.gcp.config import DEFAULT_REGION, ARTIFACT_REGISTRY_REPO
-from openmodal.providers.gcp.registry import get_registry_url, ensure_repository
-
 logger = logging.getLogger("openmodal.image")
+
+OPENMODAL_PIP_INSTALL = "RUN pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ openmodal"
 
 class Image:
     """Chainable builder that produces a Dockerfile and pushes to Artifact Registry."""
@@ -92,7 +90,7 @@ class Image:
         filename = os.path.basename(source_file)
         module_name = filename.removesuffix(".py")
         img = self._append(
-            "RUN pip install https://storage.googleapis.com/openmodal-packages/openmodal-0.2.1-py3-none-any.whl",
+            OPENMODAL_PIP_INSTALL,
             f"COPY {filename} /opt/{filename}",
             "ENV PYTHONPATH=/opt",
             f"ENV OPENMODAL_MODULE={module_name}",
@@ -105,7 +103,7 @@ class Image:
     def with_agent(self, port: int = 50051, source_file: str | None = None) -> Image:
         """Extend this image with the openmodal SDK, execution agent, and user source."""
         img = self._append(
-            "RUN pip install https://storage.googleapis.com/openmodal-packages/openmodal-0.2.1-py3-none-any.whl",
+            OPENMODAL_PIP_INSTALL,
             "ENV PYTHONPATH=/opt",
         )
         if source_file and os.path.isfile(source_file):
@@ -130,32 +128,17 @@ class Image:
         for dest_name, src_path in self._context_files.items():
             shutil.copy2(src_path, Path(tmpdir) / dest_name)
 
-    def build_and_push(self, name: str, *, use_cloud_build: bool = True) -> str:
-        """Build and push to Artifact Registry. Returns the full image URI."""
-        from openmodal.providers.gcp.config import get_project
-        from openmodal.providers.gcp.build import cloud_build, local_build
+    def build_and_push(self, name: str, *, use_cloud_build: bool = True, provider=None) -> str:
+        """Build and push to registry. Returns the full image URI."""
+        if provider is None:
+            from openmodal.providers import get_provider
+            provider = get_provider()
 
-        project = get_project()
         tag = self.content_hash()
-        image_uri = get_registry_url(project, name, tag)
-
-        result = subprocess.run(
-            ["gcloud", "artifacts", "docker", "images", "describe", image_uri, "--project", project],
-            capture_output=True, text=True,
-        )
-        if result.returncode == 0:
-            logger.debug(f"Image already exists: {image_uri}")
-            return image_uri
-
-        ensure_repository(project)
 
         with tempfile.TemporaryDirectory() as tmpdir:
             self._prepare_build_context(tmpdir)
-
-            if use_cloud_build:
-                cloud_build(tmpdir, image_uri, project)
-            else:
-                local_build(tmpdir, image_uri)
+            image_uri = provider.build_image(tmpdir, name, tag)
 
         logger.debug(f"Built and pushed: {image_uri}")
         return image_uri

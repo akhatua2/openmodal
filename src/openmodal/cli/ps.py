@@ -9,7 +9,7 @@ import click
 @click.argument("app_name", required=False, default=None)
 def ps(app_name: str | None):
     """List running OpenModal containers."""
-    from openmodal.remote import _get_provider
+    from openmodal.providers import get_provider as _get_provider
 
     provider = _get_provider()
     instances = provider.list_instances(app_name)

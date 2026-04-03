@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import click
 
-from openmodal.remote import _get_provider
+from openmodal.providers import get_provider as _get_provider
 
 
 @click.command()

@@ -21,21 +21,8 @@ AGENT_PORT = DEFAULT_PORT
 
 
 def _get_provider(spec: FunctionSpec | None = None):
-    import os
-
-    override = os.environ.get("OPENMODAL_PROVIDER")
-    if override:
-        backend = override
-    elif spec and spec.gpu and (spec.web_server_port or spec.volumes):
-        backend = "gke"
-    else:
-        backend = "gce"
-
-    if backend == "gke":
-        from openmodal.providers.gcp.gke import get_provider
-    else:
-        from openmodal.providers.gcp.compute import get_provider
-    return get_provider()
+    from openmodal.providers import get_provider
+    return get_provider(spec)
 
 
 class RemoteExecutor:
@@ -48,12 +35,10 @@ class RemoteExecutor:
         self._base_url = f"http://{ip}:{port}"
 
     def _start_log_stream(self):
-        import subprocess, sys
         try:
-            self._log_proc = subprocess.Popen(
-                ["kubectl", "logs", "-f", self.instance_name, "-n", "default", "-c", "main"],
-                stdout=sys.stdout, stderr=subprocess.DEVNULL,
-            )
+            from openmodal.providers import get_provider
+            provider = get_provider()
+            self._log_proc = provider.stream_logs(self.instance_name)
         except Exception:
             self._log_proc = None
 

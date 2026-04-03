@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import abc
+import subprocess
 
 from openmodal.function import FunctionSpec
 
@@ -35,6 +36,34 @@ class CloudProvider(abc.ABC):
     def instance_name(self, app_name: str, func_name: str, suffix: str = "") -> str:
         ...
 
-    def exec_in_pod(self, pod_name: str, command: str) -> dict:
-        """Execute a command in a running pod. Returns {output, returncode}."""
+    def build_image(self, dockerfile_dir: str, name: str, tag: str) -> str:
+        """Build and push a container image. Returns the full image URI."""
+        raise NotImplementedError
+
+    def image_exists(self, image_uri: str) -> bool:
+        """Check whether an image already exists in the registry."""
+        raise NotImplementedError
+
+    def create_sandbox_pod(self, name: str, image_uri: str | None, timeout: int = 3600, **kwargs):
+        """Create an ephemeral sandbox pod/instance."""
+        raise NotImplementedError
+
+    def exec_in_pod(self, pod_name: str, *args: str, workdir: str | None = None, env: dict[str, str] | None = None):
+        """Execute a command in a running pod. Returns ContainerProcess."""
+        raise NotImplementedError
+
+    def copy_to_pod(self, pod_name: str, local_path: str, remote_path: str):
+        """Copy a local file/directory into a running pod."""
+        raise NotImplementedError
+
+    def copy_from_pod(self, pod_name: str, remote_path: str, local_path: str):
+        """Copy a file/directory from a running pod to the local filesystem."""
+        raise NotImplementedError
+
+    def stream_logs(self, instance_name: str) -> subprocess.Popen | None:
+        """Stream logs from an instance. Returns a Popen object or None."""
+        raise NotImplementedError
+
+    def ensure_volume(self, name: str) -> str:
+        """Create a volume if needed and return its URI/path."""
         raise NotImplementedError

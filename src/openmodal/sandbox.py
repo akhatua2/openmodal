@@ -93,7 +93,7 @@ class Sandbox:
         env: dict[str, str] | None = None,
         **kwargs,
     ) -> Sandbox:
-        from openmodal.providers.gcp.gke import get_provider
+        from openmodal.providers import get_provider
 
         import re
         provider = get_provider()

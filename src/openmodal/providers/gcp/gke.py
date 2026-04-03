@@ -536,6 +536,56 @@ class GKEProvider(CloudProvider):
             check=True, capture_output=True,
         )
 
+    def build_image(self, dockerfile_dir: str, name: str, tag: str) -> str:
+        """Build and push a container image via GCP. Returns the full image URI."""
+        from openmodal.providers.gcp.config import get_project
+        from openmodal.providers.gcp.registry import get_registry_url, ensure_repository
+        from openmodal.providers.gcp.build import cloud_build
+
+        project = get_project()
+        image_uri = get_registry_url(project, name, tag)
+
+        if self.image_exists(image_uri):
+            return image_uri
+
+        ensure_repository(project)
+        cloud_build(dockerfile_dir, image_uri, project)
+        return image_uri
+
+    def image_exists(self, image_uri: str) -> bool:
+        """Check whether an image exists in GCP Artifact Registry."""
+        import subprocess
+        from openmodal.providers.gcp.config import get_project
+
+        project = get_project()
+        result = subprocess.run(
+            ["gcloud", "artifacts", "docker", "images", "describe", image_uri, "--project", project],
+            capture_output=True, text=True,
+        )
+        return result.returncode == 0
+
+    def stream_logs(self, instance_name: str):
+        """Stream logs from a Kubernetes pod."""
+        import subprocess, sys
+        try:
+            return subprocess.Popen(
+                ["kubectl", "logs", "-f", instance_name, "-n", NAMESPACE, "-c", "main"],
+                stdout=sys.stdout, stderr=subprocess.DEVNULL,
+            )
+        except Exception:
+            return None
+
+    def ensure_volume(self, name: str) -> str:
+        """Ensure a GCS bucket exists for the volume. Returns gs:// URI."""
+        from openmodal.providers.gcp.config import get_project, get_bucket_name
+        from openmodal.providers.gcp.storage import ensure_bucket
+
+        project = get_project()
+        bucket = f"{get_bucket_name(project)}-{name}"
+        gs_uri = f"gs://{bucket}"
+        ensure_bucket(gs_uri)
+        return gs_uri
+
 
 _provider: GKEProvider | None = None
 

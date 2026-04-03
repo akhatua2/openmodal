@@ -82,7 +82,7 @@ def run(ctx, app_path: str):
     deployed_funcs: list[str] = []
 
     if deployable:
-        from openmodal.providers.gcp.compute import get_provider
+        from openmodal.providers import get_provider
 
         provider = get_provider()
 
@@ -123,7 +123,7 @@ def run(ctx, app_path: str):
     finally:
         shutdown_all()
         if deployed_funcs:
-            from openmodal.providers.gcp.compute import get_provider
+            from openmodal.providers import get_provider
 
             provider = get_provider()
             for func_name in deployed_funcs:

@@ -1,6 +1,6 @@
 # GPU serving with vLLM
 
-Deploy a model on a GPU and get an OpenAI-compatible endpoint. Scales to zero when idle, scales back up on next deploy.
+Deploy a model on a GPU and get an OpenAI-compatible endpoint. Scales to zero when idle.
 
 ## The code
 
@@ -45,8 +45,6 @@ def serve():
 openmodal deploy examples/vllm_serving.py
 ```
 
-First deploy builds the Docker image (~10 min), provisions an H100 spot GPU node, starts vLLM, and returns an endpoint:
-
 ```
 openmodal deploy: vllm-test
   building image...
@@ -57,8 +55,6 @@ openmodal deploy: vllm-test
 deploy complete.
 ```
 
-Subsequent deploys skip the image build (cached) and reuse the endpoint.
-
 ## Query
 
 ```bash
@@ -67,7 +63,7 @@ curl http://104.155.171.209:8000/v1/chat/completions \
   -d '{"model":"Qwen/Qwen3.5-0.8B","messages":[{"role":"user","content":"What is 2+2?"}],"max_tokens":16}'
 ```
 
-Works with any OpenAI-compatible client:
+Works with any OpenAI client:
 
 ```python
 from openai import OpenAI
@@ -79,29 +75,41 @@ resp = client.chat.completions.create(
 print(resp.choices[0].message.content)
 ```
 
-## Scale-to-zero
-
-After `scaledown_window` (5 min in this example) of no traffic:
-
-1. Idle monitor detects no active connections
-2. Deployment scales to 0 replicas — pod terminated
-3. GKE node autoscaler removes the H100 GPU node (~5 min)
-4. GPU cost drops to $0
-
-Total time from last request to $0: `scaledown_window` + ~5 min node drain.
-
-## Stop manually
+## Stop
 
 ```bash
 openmodal stop vllm-test
 ```
 
-## How it works
+## Under the hood
 
-| Feature | Implementation |
+When you run `openmodal deploy`, here's what happens:
+
+**Building the image**
+
+Your image definition (`debian_slim().pip_install(...)`) gets turned into a Dockerfile and built via Google Cloud Build. The built image is stored in Artifact Registry. If you deploy the same code again, the image is already cached and this step is skipped.
+
+**Starting the server**
+
+OpenModal sees `gpu="H100"` + `@web_server` and picks GKE (Kubernetes) as the backend. It creates three things:
+
+- A **Deployment** — tells Kubernetes "run one copy of this container with an H100 GPU"
+- A **Service** — gives it a public IP so you can send requests to it
+- A **CronJob** — checks every minute if anyone is using the server
+
+GKE doesn't have an H100 machine sitting around, so it provisions one (a spot instance, ~60% cheaper). This takes a few minutes. Once the machine is ready, your container starts, vLLM loads the model, and the health check passes.
+
+**Scaling down**
+
+The CronJob runs every minute and checks: are there any active TCP connections to port 8000? If there haven't been any for `scaledown_window` seconds (5 min in this example), it scales the Deployment to 0 — meaning the container is stopped.
+
+Once the container is gone, the H100 machine has nothing running on it. GKE's node autoscaler notices this and removes the machine after ~5 minutes. Now you're paying $0 for GPUs.
+
+**Costs**
+
+| State | What you pay |
 |---|---|
-| `gpu="H100"` | GKE spot GPU node pool, scales 0→1 on demand |
-| `@web_server(port=8000)` | Kubernetes Deployment + LoadBalancer Service |
-| `scaledown_window=300` | CronJob checks connections every minute |
-| `@concurrent(max_inputs=8)` | vLLM handles concurrency natively |
-| Image caching | Cloud Build + Artifact Registry, hash-based |
+| Serving requests | ~$1.20/hr (H100 spot) |
+| Idle, within scaledown window | Same |
+| Scaled to zero | ~$0.10/hr (cluster overhead) |
+| Cluster deleted | $0 |

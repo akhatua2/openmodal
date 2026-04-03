@@ -33,7 +33,8 @@ def load_app(app_path: str) -> App:
 @click.group()
 @click.option("-v", "--verbose", is_flag=True)
 @click.option("--local", is_flag=True, help="Run on local Docker instead of cloud.")
-def cli(verbose: bool, local: bool):
+@click.option("--aws", is_flag=True, help="Run on AWS EKS.")
+def cli(verbose: bool, local: bool, aws: bool):
     import os
     logging.basicConfig(
         level=logging.DEBUG if verbose else logging.INFO,
@@ -41,6 +42,8 @@ def cli(verbose: bool, local: bool):
     )
     if local:
         os.environ["OPENMODAL_PROVIDER"] = "local"
+    elif aws:
+        os.environ["OPENMODAL_PROVIDER"] = "eks"
 
 
 from openmodal.cli.deploy import deploy  # noqa: E402

@@ -20,6 +20,9 @@ def get_provider(spec=None, *, sandbox: bool = False):
     if backend == "local":
         from openmodal.providers.local import get_provider as _get
         return _get()
+    elif backend in ("aws", "eks"):
+        from openmodal.providers.aws import get_provider as _get
+        return _get()
     elif backend == "gke":
         from openmodal.providers.gcp.gke import get_provider as _get
         return _get()

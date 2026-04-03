@@ -31,14 +31,15 @@ class Volume:
         return f"gs://{self.bucket}"
 
     def ensure(self, provider=None):
-        """Ensure the backing storage exists. Uses provider if given, else falls back to GCP."""
+        """Ensure the backing storage exists. Uses provider if given, else auto-detects."""
         if provider is None:
             from openmodal.providers import get_provider
             provider = get_provider()
         uri = provider.ensure_volume(self.name)
-        # Update cached bucket from the URI if it's a gs:// URI
         if uri.startswith("gs://"):
             self._bucket = uri.removeprefix("gs://")
+        elif uri.startswith("s3://"):
+            self._bucket = uri.removeprefix("s3://")
         return uri
 
     def _ensure_bucket(self):

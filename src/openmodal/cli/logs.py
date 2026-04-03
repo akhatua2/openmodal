@@ -19,7 +19,8 @@ def _validate_since(ctx, param, value):
 @click.argument("app_name", required=False, default=None)
 @click.option("-f", "--follow/--no-follow", default=True, help="Follow log output (default: true).")
 @click.option("--tail", type=int, default=None, help="Number of recent lines to show.")
-@click.option("--since", type=str, default=None, callback=_validate_since, help="Show logs since duration (e.g. 5m, 1h).")
+@click.option("--since", type=str, default=None, callback=_validate_since,
+              help="Show logs since duration (e.g. 5m, 1h).")
 def logs(app_name: str | None, follow: bool, tail: int | None, since: str | None):
     """View logs from OpenModal containers.
 
@@ -38,7 +39,7 @@ def logs(app_name: str | None, follow: bool, tail: int | None, since: str | None
         click.echo(f"  {'NAME':<45} {'STATUS':<12}")
         for inst in instances:
             click.echo(f"  {inst['name']:<45} {inst.get('status', ''):<12}")
-        click.echo(f"\nUsage: openmodal logs <name>")
+        click.echo("\nUsage: openmodal logs <name>")
         return
 
     instances = provider.list_instances(app_name)

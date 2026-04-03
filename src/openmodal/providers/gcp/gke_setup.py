@@ -32,18 +32,12 @@ def setup_cluster(gpu_types: list[str] | None = None, region: str = DEFAULT_REGI
     account = _get_account()
     gpu_types = gpu_types or ["h100"]
 
-    # Don't use --workload-pool: it forces GCS FUSE to use Workload Identity,
-    # which requires IAM admin to bind Kubernetes SAs to GCP SAs. Most users
-    # on shared company projects won't have that permission. Without it, GCS
-    # FUSE falls back to the node's compute service account, which works with
-    # bucket-level IAM that any user can set.
     _run([
         "gcloud", "container", "clusters", "create", CLUSTER_NAME,
         f"--region={region}",
         "--machine-type=e2-standard-4",
         "--num-nodes=1",
         "--enable-autoscaling", "--min-nodes=0", "--max-nodes=1",
-        "--addons=GcsFuseCsiDriver",
         "--scopes=storage-full",
         "--release-channel=regular",
         f"--project={project}",
@@ -58,7 +52,7 @@ def setup_cluster(gpu_types: list[str] | None = None, region: str = DEFAULT_REGI
         "kubectl", "create", "clusterrolebinding", "openmodal-admin",
         "--clusterrole=cluster-admin",
         f"--user={account}",
-    ])
+    ], check=False)
 
     _run([
         "kubectl", "apply", "-f",
@@ -84,10 +78,13 @@ def setup_cluster(gpu_types: list[str] | None = None, region: str = DEFAULT_REGI
         pool = GPU_NODE_POOLS.get(gpu_type.lower())
         if not pool:
             continue
+        # Restrict to zones a/b/c — not all zones have every GPU type.
+        zones = ",".join(f"{region}-{z}" for z in ["a", "b", "c"])
         _run([
             "gcloud", "container", "node-pools", "create", f"{gpu_type.lower()}-spot",
             f"--cluster={CLUSTER_NAME}",
             f"--region={region}",
+            f"--node-locations={zones}",
             f"--machine-type={pool['machine_type']}",
             f"--accelerator=type={pool['accelerator']},count={pool['count']}",
             "--spot",

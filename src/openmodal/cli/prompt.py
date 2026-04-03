@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import sys
 
-
 # ANSI codes
 DIM = "\033[2m"
 BOLD = "\033[1m"
@@ -65,7 +64,7 @@ def select(label: str, choices: list[str]) -> str:
     # Print initial menu in normal mode, then switch to raw for input
     for i, choice in enumerate(choices):
         if i == idx:
-            sys.stdout.write(f"  {CYAN}❯ {choice}{RESET}\n")
+            sys.stdout.write(f"  {CYAN}❯ {choice}{RESET}\n")  # noqa: RUF001
         else:
             sys.stdout.write(f"    {DIM}{choice}{RESET}\n")
     sys.stdout.flush()
@@ -92,7 +91,7 @@ def select(label: str, choices: list[str]) -> str:
                 for i, choice in enumerate(choices):
                     sys.stdout.write(f"\r{CLEAR_LINE}")
                     if i == idx:
-                        sys.stdout.write(f"  {CYAN}❯ {choice}{RESET}")
+                        sys.stdout.write(f"  {CYAN}❯ {choice}{RESET}")  # noqa: RUF001
                     else:
                         sys.stdout.write(f"    {DIM}{choice}{RESET}")
                     if i < n - 1:

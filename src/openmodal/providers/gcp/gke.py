@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import time
 import urllib.error
@@ -12,8 +13,6 @@ from kubernetes import client, config, watch
 from openmodal.function import FunctionSpec
 from openmodal.providers.base import CloudProvider
 from openmodal.providers.gcp.config import (
-    GPU_MAP,
-    MACHINE_SPECS,
     machine_spec_str,
     parse_gpu_config,
 )
@@ -22,6 +21,7 @@ logger = logging.getLogger("openmodal.gke")
 
 NAMESPACE = "default"
 LABEL_MANAGED_BY = "openmodal"
+SYNC_IMAGE = "gcr.io/google.com/cloudsdktool/google-cloud-cli:slim"
 
 
 def _k8s_name(name: str) -> str:
@@ -64,8 +64,10 @@ def _build_pod_spec(
             for k, v in secret.env_dict.items():
                 env_vars.append(client.V1EnvVar(name=k, value=v))
         elif hasattr(secret, "name") and secret.name:
+            import json
+            import subprocess
+
             from openmodal.providers.gcp.config import get_project
-            import subprocess, json
             try:
                 result = subprocess.run(
                     ["gcloud", "secrets", "versions", "access", "latest",
@@ -115,30 +117,26 @@ def _build_pod_spec(
         ),
     ]
 
-    for mount_path, vol in spec.volumes.items():
-        vol_name = f"vol-{vol.name}"
-        volumes.append(client.V1Volume(
-            name=vol_name,
-            csi=client.V1CSIVolumeSource(
-                driver="gcsfuse.csi.storage.gke.io",
-                volume_attributes={"bucketName": vol.bucket, "mountOptions": "implicit-dirs"},
-            ),
-        ))
-        container.volume_mounts.append(
-            client.V1VolumeMount(name=vol_name, mount_path=mount_path),
-        )
+    init_containers = []
+    sidecar_containers = []
+    if spec.volumes:
+        from openmodal.providers.volume_helpers import build_volume_specs
+        vol_volumes, vol_mounts, init_containers, sidecar_containers = build_volume_specs(spec, SYNC_IMAGE)
+        volumes.extend(vol_volumes)
+        container.volume_mounts.extend(vol_mounts)
 
     return client.V1Pod(
         metadata=client.V1ObjectMeta(
             name=name,
             labels={"app": name, "managed-by": LABEL_MANAGED_BY},
-            annotations={"gke-gcsfuse/volumes": "true"} if spec.volumes else None,
         ),
         spec=client.V1PodSpec(
             node_selector=node_selector or None,
             tolerations=tolerations or None,
-            containers=[container],
+            init_containers=init_containers or None,
+            containers=[container, *sidecar_containers],
             restart_policy="Never",
+            termination_grace_period_seconds=120 if spec.volumes else 30,
             volumes=volumes,
         ),
     )
@@ -146,7 +144,8 @@ def _build_pod_spec(
 
 class GKEProvider(CloudProvider):
     def preflight_check(self, spec):
-        import shutil, subprocess
+        import shutil
+        import subprocess
         if not shutil.which("gcloud"):
             raise RuntimeError("gcloud CLI not found. Run 'openmodal setup gcp' to get started.")
         result = subprocess.run(
@@ -168,10 +167,10 @@ class GKEProvider(CloudProvider):
 
     def _ensure_gke_context(self):
         """Make sure kubectl is pointing at our GKE cluster, not some other cluster."""
-        from openmodal.providers.gcp.gke_setup import CLUSTER_NAME
-        from openmodal.providers.gcp.config import get_project, DEFAULT_REGION
-
         import subprocess
+
+        from openmodal.providers.gcp.config import DEFAULT_REGION, get_project
+        from openmodal.providers.gcp.gke_setup import CLUSTER_NAME
         project = get_project()
         region = DEFAULT_REGION
 
@@ -286,10 +285,8 @@ class GKEProvider(CloudProvider):
 
         batch_v1 = BatchV1Api()
 
-        try:
+        with contextlib.suppress(client.exceptions.ApiException):
             batch_v1.delete_namespaced_cron_job(f"{name}-idle-scaledown", NAMESPACE)
-        except client.exceptions.ApiException:
-            pass
 
         script = (
             f'DEPLOY={name}; '
@@ -300,11 +297,13 @@ class GKEProvider(CloudProvider):
             'if [ "$REPLICAS" = "0" ]; then exit 0; fi; '
             'POD=$(kubectl get pods -n $NAMESPACE -l app=$DEPLOY -o jsonpath="{.items[0].metadata.name}" 2>/dev/null); '
             'if [ -z "$POD" ]; then exit 0; fi; '
-            'READY=$(kubectl get pod $POD -n $NAMESPACE -o jsonpath="{.status.conditions[?(@.type==\\"Ready\\")].status}" 2>/dev/null); '
+            'READY=$(kubectl get pod $POD -n $NAMESPACE -o '
+            'jsonpath="{.status.conditions[?(@.type==\\"Ready\\")].status}" 2>/dev/null); '
             'if [ "$READY" != "True" ]; then exit 0; fi; '
             'LAST=$(kubectl get pod $POD -n $NAMESPACE -o jsonpath="{.metadata.annotations.last-active}" 2>/dev/null); '
             'NOW=$(date +%s); '
-            'CONNS=$(kubectl exec $POD -n $NAMESPACE -- sh -c "ss -tn | grep :$PORT | grep -c ESTAB" 2>/dev/null || echo 0); '
+            'CONNS=$(kubectl exec $POD -n $NAMESPACE -- '
+            'sh -c "ss -tn | grep :$PORT | grep -c ESTAB" 2>/dev/null || echo 0); '
             'if [ "$CONNS" -gt "0" ]; then '
             '  kubectl annotate pod $POD -n $NAMESPACE last-active=$NOW --overwrite; '
             '  exit 0; '
@@ -383,12 +382,17 @@ class GKEProvider(CloudProvider):
             timeout_seconds=timeout,
         ):
             pod = event["object"]
-            if pod.status.phase == "Running" and pod.status.pod_ip:
-                if pod.status.container_statuses and all(
-                    cs.ready or (cs.state and cs.state.running) for cs in pod.status.container_statuses
-                ):
-                    w.stop()
-                    return
+            if (
+                pod.status.phase == "Running"
+                and pod.status.pod_ip
+                and pod.status.container_statuses
+                and all(
+                    cs.ready or (cs.state and cs.state.running)
+                    for cs in pod.status.container_statuses
+                )
+            ):
+                w.stop()
+                return
             if pod.status.phase in ("Failed", "Unknown"):
                 w.stop()
                 reason = self._get_pod_failure_reason(name)
@@ -462,13 +466,13 @@ class GKEProvider(CloudProvider):
         for api_call in [
             lambda: self._apps_v1.delete_namespaced_deployment(instance_name, NAMESPACE),
             lambda: self._v1.delete_namespaced_service(instance_name, NAMESPACE),
-            lambda: self._v1.delete_namespaced_pod(instance_name, NAMESPACE, body=client.V1DeleteOptions(grace_period_seconds=0)),
+            lambda: self._v1.delete_namespaced_pod(
+                instance_name, NAMESPACE, body=client.V1DeleteOptions(grace_period_seconds=0),
+            ),
             lambda: batch_v1.delete_namespaced_cron_job(f"{instance_name}-idle-scaledown", NAMESPACE),
         ]:
-            try:
+            with contextlib.suppress(client.exceptions.ApiException):
                 api_call()
-            except client.exceptions.ApiException:
-                pass
 
     def list_instances(self, app_name: str | None = None) -> list[dict]:
         label_selector = f"managed-by={LABEL_MANAGED_BY}"
@@ -568,6 +572,7 @@ class GKEProvider(CloudProvider):
 
     def exec_in_pod(self, pod_name: str, *args: str, workdir: str | None = None, env: dict[str, str] | None = None):
         from kubernetes.stream import stream
+
         from openmodal.process import ContainerProcess
 
         command = list(args)
@@ -578,12 +583,11 @@ class GKEProvider(CloudProvider):
         elif workdir:
             command = ["bash", "-c", f"cd {workdir} && {' '.join(command)}"]
 
-        if env:
-            if command[0] == "bash" and "-c" in command:
-                idx = command.index("-c")
-                if idx + 1 < len(command):
-                    prefix = " ".join(f"export {k}={v};" for k, v in env.items())
-                    command[idx + 1] = f"{prefix} {command[idx + 1]}"
+        if env and command[0] == "bash" and "-c" in command:
+            idx = command.index("-c")
+            if idx + 1 < len(command):
+                prefix = " ".join(f"export {k}={v};" for k, v in env.items())
+                command[idx + 1] = f"{prefix} {command[idx + 1]}"
 
         resp = stream(
             self._v1.connect_get_namespaced_pod_exec,
@@ -629,9 +633,9 @@ class GKEProvider(CloudProvider):
 
     def build_image(self, dockerfile_dir: str, name: str, tag: str) -> str:
         """Build and push a container image via GCP. Returns the full image URI."""
-        from openmodal.providers.gcp.config import get_project
-        from openmodal.providers.gcp.registry import get_registry_url, ensure_repository
         from openmodal.providers.gcp.build import cloud_build
+        from openmodal.providers.gcp.config import get_project
+        from openmodal.providers.gcp.registry import ensure_repository, get_registry_url
 
         project = get_project()
         image_uri = get_registry_url(project, name, tag)
@@ -646,6 +650,7 @@ class GKEProvider(CloudProvider):
     def image_exists(self, image_uri: str) -> bool:
         """Check whether an image exists in GCP Artifact Registry."""
         import subprocess
+
         from openmodal.providers.gcp.config import get_project
 
         project = get_project()
@@ -659,7 +664,8 @@ class GKEProvider(CloudProvider):
                     tail: int | None = None, since: str | None = None,
                     include_stderr: bool = False):
         """Stream logs from a Kubernetes pod."""
-        import subprocess, sys
+        import subprocess
+        import sys
         cmd = ["kubectl", "logs", instance_name, "-n", NAMESPACE, "-c", "main"]
         if follow:
             cmd.append("-f")
@@ -677,7 +683,7 @@ class GKEProvider(CloudProvider):
 
     def ensure_volume(self, name: str) -> str:
         """Ensure a GCS bucket exists for the volume. Returns gs:// URI."""
-        from openmodal.providers.gcp.config import get_project, get_bucket_name
+        from openmodal.providers.gcp.config import get_bucket_name, get_project
         from openmodal.providers.gcp.storage import ensure_bucket
 
         project = get_project()

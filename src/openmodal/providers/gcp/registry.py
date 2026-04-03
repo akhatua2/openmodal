@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import subprocess
 
-from openmodal.providers.gcp.config import DEFAULT_REGION, ARTIFACT_REGISTRY_REPO
+from openmodal.providers.gcp.config import ARTIFACT_REGISTRY_REPO, DEFAULT_REGION
 
 
 def get_registry_url(project: str, image_name: str, tag: str = "latest") -> str:

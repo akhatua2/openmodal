@@ -9,7 +9,6 @@ import importlib
 import inspect
 import os
 import signal
-import sys
 
 module_name = os.environ["OPENMODAL_MODULE"]
 function_name = os.environ["OPENMODAL_FUNCTION"]

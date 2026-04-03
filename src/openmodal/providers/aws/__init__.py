@@ -2,7 +2,6 @@
 
 from openmodal.providers.aws.eks import EKSProvider
 
-
 _provider: EKSProvider | None = None
 
 

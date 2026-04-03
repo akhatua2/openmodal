@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.3.4 (2026-04-03)
+
+### Changed
+- **Volumes rewritten** — replaced CSI drivers (GCS FUSE, S3 Mountpoint, Azure Blob CSI) with init container sync. Volumes now sync from cloud storage at startup and back on shutdown. Same filesystem mount paths, no Workload Identity or IAM admin needed.
+- GKE cluster no longer requires GCS FUSE addon or Workload Identity
+- EKS cluster no longer installs S3 CSI driver addon
+- GPU node pools restricted to zones a/b/c to avoid accelerator availability errors
+
+### Fixed
+- Pickle deserialization of user-defined classes (e.g. dataclasses) in remote execution
+- GKE cluster RBAC binding failure no longer crashes setup on shared projects
+- All ruff lint errors across the codebase (import sorting, line length, unused variables)
+- Fixed ty type checker configuration and type errors in agent and volume code
+
+### Removed
+- GCS FUSE CSI driver dependency
+- S3 CSI driver and IRSA setup for volumes
+- Azure Blob CSI volume specs
+- Bucket-level IAM grant logic from GCP storage
+
 ## 0.3.3 (2026-04-03)
 
 ### Added

@@ -35,7 +35,7 @@ class Image:
         return img
 
     @classmethod
-    def from_registry(cls, tag: str, *, add_python: str | None = None, secret: any = None) -> Image:
+    def from_registry(cls, tag: str, *, add_python: str | None = None, secret: any | None = None) -> Image:
         img = cls([f"FROM {tag}", "ENV DEBIAN_FRONTEND=noninteractive"])
         if add_python:
             img = img._append(
@@ -110,7 +110,7 @@ class Image:
             filename = os.path.basename(source_file)
             img = img._append(f"COPY {filename} /opt/{filename}")
             img._context_files[filename] = source_file
-        return img._append(f'CMD ["python", "-m", "openmodal.runtime.agent"]')
+        return img._append('CMD ["python", "-m", "openmodal.runtime.agent"]')
 
     def to_dockerfile(self) -> str:
         return "\n".join(self._commands) + "\n"

@@ -3,13 +3,13 @@ import os
 import shlex
 from pathlib import Path, PurePosixPath
 
-from openmodal import App, Image, Sandbox, Secret, Volume
-from tenacity import retry, stop_after_attempt, wait_exponential
-
 from harbor.environments.base import BaseEnvironment, ExecResult
 from harbor.models.environment_type import EnvironmentType
 from harbor.models.task.config import EnvironmentConfig
 from harbor.models.trial.paths import EnvironmentPaths, TrialPaths
+from tenacity import retry, stop_after_attempt, wait_exponential
+
+from openmodal import App, Image, Sandbox, Secret, Volume
 
 
 class ModalEnvironment(BaseEnvironment):
@@ -362,10 +362,7 @@ class ModalEnvironment(BaseEnvironment):
         if user is not None:
             # Modal doesn't support user= on exec; wrap with su.
             # su requires a username; resolve numeric UIDs via getent.
-            if isinstance(user, int):
-                user_arg = f"$(getent passwd {user} | cut -d: -f1)"
-            else:
-                user_arg = shlex.quote(str(user))
+            user_arg = f"$(getent passwd {user} | cut -d: -f1)" if isinstance(user, int) else shlex.quote(str(user))
             # Use su (not su -) to preserve the working directory
             command = f"su {user_arg} -s /bin/bash -c {shlex.quote(command)}"
 

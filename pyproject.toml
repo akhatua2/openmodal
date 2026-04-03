@@ -1,6 +1,6 @@
 [project]
 name = "openmodal"
-version = "0.3.3"
+version = "0.3.4"
 description = "Run Modal on your own cloud. Open-source, cloud-agnostic serverless GPU compute."
 requires-python = "==3.12.*"
 dependencies = [
@@ -32,9 +32,9 @@ src = ["src"]
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
 
-[tool.ty]
-python-version = "3.11"
-src = ["src"]
+[tool.ty.environment]
+python-version = "3.12"
+extra-paths = ["src"]
 
 [dependency-groups]
 dev = [

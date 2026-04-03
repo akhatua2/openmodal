@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import functools
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 
 class _AioWrapper:
@@ -39,10 +40,7 @@ class _MethodWithAio:
         self._name = name
 
     def __get__(self, obj, objtype=None):
-        if obj is None:
-            bound = self._fn
-        else:
-            bound = self._fn.__get__(obj, objtype)
+        bound = self._fn if obj is None else self._fn.__get__(obj, objtype)
         bound.aio = _AioWrapper(bound)
         return bound
 

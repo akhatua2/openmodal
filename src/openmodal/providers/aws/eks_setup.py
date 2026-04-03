@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import logging
 import subprocess
-import time
 
 from openmodal.providers.aws.config import CLUSTER_NAME, get_account_id, get_region
 
@@ -18,11 +17,11 @@ def _run(cmd: list[str], check: bool = True, capture: bool = True) -> subprocess
 
 
 def _kubectl(args: list[str], check: bool = True):
-    return _run(["kubectl"] + args, check=check)
+    return _run(["kubectl", *args], check=check)
 
 
 def _helm(args: list[str], check: bool = True):
-    return _run(["helm"] + args, check=check)
+    return _run(["helm", *args], check=check)
 
 
 def cluster_exists(region: str | None = None) -> bool:
@@ -78,10 +77,7 @@ def setup_cluster(region: str | None = None):
     _helm(["repo", "update"])
     _helm(["install", "keda", "kedacore/keda", "--namespace", "keda", "--create-namespace"])
 
-    # 5. Install Mountpoint for Amazon S3 CSI driver
-    _install_s3_csi(region, account_id)
-
-    # 6. Create Karpenter NodePool for GPU instances
+    # 5. Create Karpenter NodePool for GPU instances
     _create_gpu_nodepool()
 
     logger.info("EKS cluster setup complete.")
@@ -163,32 +159,6 @@ def _ensure_karpenter_policy(account_id: str, region: str):
     )
 
 
-def _install_s3_csi(region: str, account_id: str):
-    """Install Mountpoint for Amazon S3 CSI driver."""
-    logger.info("Installing S3 CSI driver...")
-
-    # Create IAM role for S3 access
-    _run([
-        "eksctl", "create", "iamserviceaccount",
-        "--cluster", CLUSTER_NAME,
-        "--name", "s3-csi-driver-sa",
-        "--namespace", "kube-system",
-        "--attach-policy-arn", "arn:aws:iam::aws:policy/AmazonS3FullAccess",
-        "--role-name", f"OpenModalS3CSI-{CLUSTER_NAME}",
-        "--approve",
-        "--region", region,
-    ], check=False)
-
-    # Install the S3 CSI driver addon
-    _run([
-        "aws", "eks", "create-addon",
-        "--cluster-name", CLUSTER_NAME,
-        "--addon-name", "aws-mountpoint-s3-csi-driver",
-        "--service-account-role-arn", f"arn:aws:iam::{account_id}:role/OpenModalS3CSI-{CLUSTER_NAME}",
-        "--region", region,
-    ], check=False)
-
-
 def _create_gpu_nodepool():
     """Create Karpenter NodePool and EC2NodeClass for GPU workloads."""
     logger.info("Creating Karpenter GPU NodePool...")
@@ -200,8 +170,8 @@ def _create_gpu_nodepool():
         "spec": {
             "role": f"eksctl-{CLUSTER_NAME}-nodegroup-ng-default-NodeInstanceRole",
             "amiSelectorTerms": [{"alias": "al2023@latest"}],
-            "subnetSelectorTerms": [{"tags": {f"eksctl.cluster.k8s.io/v1alpha1/cluster-name": CLUSTER_NAME}}],
-            "securityGroupSelectorTerms": [{"tags": {f"eksctl.cluster.k8s.io/v1alpha1/cluster-name": CLUSTER_NAME}}],
+            "subnetSelectorTerms": [{"tags": {"eksctl.cluster.k8s.io/v1alpha1/cluster-name": CLUSTER_NAME}}],
+            "securityGroupSelectorTerms": [{"tags": {"eksctl.cluster.k8s.io/v1alpha1/cluster-name": CLUSTER_NAME}}],
             "blockDeviceMappings": [{
                 "deviceName": "/dev/xvda",
                 "ebs": {"volumeSize": "200Gi", "volumeType": "gp3"},

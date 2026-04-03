@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from openmodal.image import Image
-    from openmodal.secret import Secret
-    from openmodal.volume import Volume
+    pass
 
 
 @dataclass

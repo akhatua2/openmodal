@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import subprocess
-
 DEFAULT_REGION = "us-east-1"
 CLUSTER_NAME = "openmodal"
 ECR_REPO_PREFIX = "openmodal"

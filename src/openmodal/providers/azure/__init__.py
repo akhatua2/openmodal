@@ -2,7 +2,6 @@
 
 from openmodal.providers.azure.aks import AKSProvider
 
-
 _provider: AKSProvider | None = None
 
 

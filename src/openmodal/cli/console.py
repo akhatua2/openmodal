@@ -7,7 +7,6 @@ import sys
 import threading
 import time
 
-
 SPINNER_FRAMES = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
 
 

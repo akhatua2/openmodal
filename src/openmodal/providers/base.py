@@ -10,7 +10,9 @@ from openmodal.function import FunctionSpec
 
 class CloudProvider(abc.ABC):
     @abc.abstractmethod
-    def create_instance(self, spec: FunctionSpec, image_uri: str | None = None, name: str | None = None) -> tuple[str, str]:
+    def create_instance(
+        self, spec: FunctionSpec, image_uri: str | None = None, name: str | None = None,
+    ) -> tuple[str, str]:
         """Create an instance. Returns (instance_name, ip)."""
         ...
 
@@ -36,9 +38,8 @@ class CloudProvider(abc.ABC):
     def instance_name(self, app_name: str, func_name: str, suffix: str = "") -> str:
         ...
 
-    def preflight_check(self, spec: FunctionSpec) -> None:
+    def preflight_check(self, spec: FunctionSpec) -> None:  # noqa: B027
         """Fast check that the provider is ready. Called before image build."""
-        pass
 
     def build_image(self, dockerfile_dir: str, name: str, tag: str) -> str:
         """Build and push a container image. Returns the full image URI."""

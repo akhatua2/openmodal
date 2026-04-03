@@ -7,10 +7,7 @@ def get_provider(spec=None, *, sandbox: bool = False):
     import os
 
     override = os.environ.get("OPENMODAL_PROVIDER")
-    if override:
-        backend = override
-    else:
-        backend = "gke"
+    backend = override or "gke"
 
     if backend == "local":
         from openmodal.providers.local import get_provider as _get

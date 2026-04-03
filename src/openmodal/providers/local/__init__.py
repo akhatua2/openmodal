@@ -12,8 +12,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from openmodal.providers.base import CloudProvider
 from openmodal.function import FunctionSpec
+from openmodal.providers.base import CloudProvider
 
 logger = logging.getLogger("openmodal.local")
 
@@ -70,7 +70,7 @@ class LocalProvider(CloudProvider):
             _check_gpu(spec.gpu)
 
     def _ensure_default_agent_image(self, source_file: str | None = None) -> str:
-        from openmodal.image import Image, OPENMODAL_PIP_INSTALL
+        from openmodal.image import OPENMODAL_PIP_INSTALL, Image
         img = Image.debian_slim()
         img = img._append(OPENMODAL_PIP_INSTALL, "ENV PYTHONPATH=/opt")
         if source_file and os.path.isfile(source_file):
@@ -86,7 +86,9 @@ class LocalProvider(CloudProvider):
         src_dir = Path(__file__).parent.parent.parent.parent  # .../src/
         return ["-v", f"{src_dir}:/opt/openmodal_src", "-e", "PYTHONPATH=/opt/openmodal_src:/opt"]
 
-    def create_instance(self, spec: FunctionSpec, image_uri: str | None = None, name: str | None = None) -> tuple[str, str]:
+    def create_instance(
+        self, spec: FunctionSpec, image_uri: str | None = None, name: str | None = None,
+    ) -> tuple[str, str]:
         name = name or spec.name
         name = name.lower().replace("_", "-")[:63]
         if image_uri is None:
@@ -238,7 +240,7 @@ class LocalProvider(CloudProvider):
             if env:
                 for k, v in env.items():
                     docker_cmd += ["-e", f"{k}={v}"]
-            docker_cmd += [pod_name] + command
+            docker_cmd += [pod_name, *command]
 
         result = subprocess.run(docker_cmd, capture_output=True, text=True)
         return ContainerProcess(

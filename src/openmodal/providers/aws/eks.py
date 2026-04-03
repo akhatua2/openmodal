@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import time
 import urllib.error
@@ -10,20 +11,20 @@ import urllib.request
 from kubernetes import client, config, watch
 
 from openmodal.function import FunctionSpec
-from openmodal.providers.base import CloudProvider
 from openmodal.providers.aws.config import (
     GPU_MAP,
-    MACHINE_SPECS,
-    machine_spec_str,
-    parse_gpu_config,
     get_account_id,
     get_region,
+    machine_spec_str,
+    parse_gpu_config,
 )
+from openmodal.providers.base import CloudProvider
 
 logger = logging.getLogger("openmodal.aws.eks")
 
 NAMESPACE = "default"
 LABEL_MANAGED_BY = "openmodal"
+SYNC_IMAGE = "amazon/aws-cli:latest"
 
 
 def _k8s_name(name: str) -> str:
@@ -109,18 +110,13 @@ def _build_pod_spec(
         ),
     ]
 
-    for mount_path, vol in spec.volumes.items():
-        vol_name = f"vol-{vol.name}"
-        volumes.append(client.V1Volume(
-            name=vol_name,
-            csi=client.V1CSIVolumeSource(
-                driver="s3.csi.aws.com",
-                volume_attributes={"bucketName": vol.bucket},
-            ),
-        ))
-        container.volume_mounts.append(
-            client.V1VolumeMount(name=vol_name, mount_path=mount_path),
-        )
+    init_containers = []
+    sidecar_containers = []
+    if spec.volumes:
+        from openmodal.providers.volume_helpers import build_volume_specs
+        vol_volumes, vol_mounts, init_containers, sidecar_containers = build_volume_specs(spec, SYNC_IMAGE)
+        volumes.extend(vol_volumes)
+        container.volume_mounts.extend(vol_mounts)
 
     return client.V1Pod(
         metadata=client.V1ObjectMeta(
@@ -130,8 +126,10 @@ def _build_pod_spec(
         spec=client.V1PodSpec(
             node_selector=node_selector or None,
             tolerations=tolerations or None,
-            containers=[container],
+            init_containers=init_containers or None,
+            containers=[container, *sidecar_containers],
             restart_policy="Never",
+            termination_grace_period_seconds=120 if spec.volumes else 30,
             volumes=volumes,
         ),
     )
@@ -139,7 +137,8 @@ def _build_pod_spec(
 
 class EKSProvider(CloudProvider):
     def preflight_check(self, spec):
-        import shutil, subprocess
+        import shutil
+        import subprocess
         if not shutil.which("aws"):
             raise RuntimeError("aws CLI not found. Run 'openmodal setup aws' to get started.")
         result = subprocess.run(
@@ -191,7 +190,8 @@ class EKSProvider(CloudProvider):
     def _ensure_default_agent_image(self, source_file: str | None = None) -> str:
         """Build a default agent image with openmodal installed and push to ECR."""
         import os
-        from openmodal.image import Image, OPENMODAL_PIP_INSTALL
+
+        from openmodal.image import OPENMODAL_PIP_INSTALL, Image
         img = Image.debian_slim()
         img = img._append(OPENMODAL_PIP_INSTALL, "ENV PYTHONPATH=/opt")
         if source_file and os.path.isfile(source_file):
@@ -298,12 +298,10 @@ class EKSProvider(CloudProvider):
             },
         }
 
-        try:
+        with contextlib.suppress(client.exceptions.ApiException):
             custom.delete_namespaced_custom_object(
                 "keda.sh", "v1alpha1", NAMESPACE, "scaledobjects", f"{name}-scaledown",
             )
-        except client.exceptions.ApiException:
-            pass
 
         custom.create_namespaced_custom_object(
             "keda.sh", "v1alpha1", NAMESPACE, "scaledobjects", scaled_object,
@@ -359,12 +357,17 @@ class EKSProvider(CloudProvider):
             timeout_seconds=timeout,
         ):
             pod = event["object"]
-            if pod.status.phase == "Running" and pod.status.pod_ip:
-                if pod.status.container_statuses and all(
-                    cs.ready or (cs.state and cs.state.running) for cs in pod.status.container_statuses
-                ):
-                    w.stop()
-                    return
+            if (
+                pod.status.phase == "Running"
+                and pod.status.pod_ip
+                and pod.status.container_statuses
+                and all(
+                    cs.ready or (cs.state and cs.state.running)
+                    for cs in pod.status.container_statuses
+                )
+            ):
+                w.stop()
+                return
             if pod.status.phase in ("Failed", "Unknown"):
                 w.stop()
                 reason = self._get_pod_failure_reason(name)
@@ -412,16 +415,16 @@ class EKSProvider(CloudProvider):
         for api_call in [
             lambda: self._apps_v1.delete_namespaced_deployment(instance_name, NAMESPACE),
             lambda: self._v1.delete_namespaced_service(instance_name, NAMESPACE),
-            lambda: self._v1.delete_namespaced_pod(instance_name, NAMESPACE, body=client.V1DeleteOptions(grace_period_seconds=0)),
+            lambda: self._v1.delete_namespaced_pod(
+                instance_name, NAMESPACE, body=client.V1DeleteOptions(grace_period_seconds=0),
+            ),
             lambda: batch_v1.delete_namespaced_cron_job(f"{instance_name}-idle-scaledown", NAMESPACE),
             lambda: custom.delete_namespaced_custom_object(
                 "keda.sh", "v1alpha1", NAMESPACE, "scaledobjects", f"{instance_name}-scaledown",
             ),
         ]:
-            try:
+            with contextlib.suppress(client.exceptions.ApiException):
                 api_call()
-            except client.exceptions.ApiException:
-                pass
 
     def list_instances(self, app_name: str | None = None) -> list[dict]:
         label_selector = f"managed-by={LABEL_MANAGED_BY}"
@@ -519,6 +522,7 @@ class EKSProvider(CloudProvider):
 
     def exec_in_pod(self, pod_name: str, *args: str, workdir: str | None = None, env: dict[str, str] | None = None):
         from kubernetes.stream import stream
+
         from openmodal.process import ContainerProcess
 
         command = list(args)
@@ -529,12 +533,11 @@ class EKSProvider(CloudProvider):
         elif workdir:
             command = ["bash", "-c", f"cd {workdir} && {' '.join(command)}"]
 
-        if env:
-            if command[0] == "bash" and "-c" in command:
-                idx = command.index("-c")
-                if idx + 1 < len(command):
-                    prefix = " ".join(f"export {k}={v};" for k, v in env.items())
-                    command[idx + 1] = f"{prefix} {command[idx + 1]}"
+        if env and command[0] == "bash" and "-c" in command:
+            idx = command.index("-c")
+            if idx + 1 < len(command):
+                prefix = " ".join(f"export {k}={v};" for k, v in env.items())
+                command[idx + 1] = f"{prefix} {command[idx + 1]}"
 
         resp = stream(
             self._v1.connect_get_namespaced_pod_exec,
@@ -581,8 +584,8 @@ class EKSProvider(CloudProvider):
     # ── Images ────────────────────────────────────────────────────────
 
     def build_image(self, dockerfile_dir: str, name: str, tag: str) -> str:
-        from openmodal.providers.aws.ecr import get_registry_url, ensure_repository, docker_login
         from openmodal.providers.aws.build import build_and_push
+        from openmodal.providers.aws.ecr import docker_login, ensure_repository, get_registry_url
 
         account_id = get_account_id()
         region = get_region()
@@ -628,7 +631,8 @@ class EKSProvider(CloudProvider):
     def stream_logs(self, instance_name: str, *, follow: bool = True,
                     tail: int | None = None, since: str | None = None,
                     include_stderr: bool = False):
-        import subprocess, sys
+        import subprocess
+        import sys
         cmd = ["kubectl", "logs", instance_name, "-n", NAMESPACE, "-c", "main"]
         if follow:
             cmd.append("-f")

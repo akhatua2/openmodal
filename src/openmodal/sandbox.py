@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import uuid
+from collections.abc import Collection
 from dataclasses import dataclass
-from typing import Any, Collection
+from typing import Any
 
-from openmodal._async_utils import _AioWrapper
 from openmodal.process import ContainerProcess
 
 
@@ -93,9 +93,9 @@ class Sandbox:
         env: dict[str, str] | None = None,
         **kwargs,
     ) -> Sandbox:
-        from openmodal.providers import get_provider
-
         import re
+
+        from openmodal.providers import get_provider
         provider = get_provider(sandbox=True)
         app_name = app.name if app else "sandbox"
         safe_name = re.sub(r'[^a-z0-9-]', '-', app_name.lower()).strip('-')
@@ -129,7 +129,10 @@ class Sandbox:
 
     @property
     def exec(self):
-        def fn(*args: str, workdir: str | None = None, secrets: Collection[Any] | None = None, timeout: int | None = None, **kwargs) -> ContainerProcess:
+        def fn(
+            *args: str, workdir: str | None = None, secrets: Collection[Any] | None = None,
+            timeout: int | None = None, **kwargs,
+        ) -> ContainerProcess:
             env = {}
             for secret in (secrets or []):
                 if hasattr(secret, "env_dict"):

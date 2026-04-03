@@ -13,7 +13,8 @@ def fetch_script(secret: Secret) -> str:
     return (
         f'SECRET_VALUE=$(gcloud secrets versions access latest --secret="{secret.name}" 2>/dev/null)\n'
         f'if [ -n "$SECRET_VALUE" ]; then\n'
-        f'  for key in $(echo "$SECRET_VALUE" | python3 -c "import sys,json; print(\'\\n\'.join(json.load(sys.stdin).keys()))"); do\n'
+        f'  for key in $(echo "$SECRET_VALUE" | python3 -c '
+        f'"import sys,json; print(\'\\n\'.join(json.load(sys.stdin).keys()))"); do\n'
         f'    val=$(echo "$SECRET_VALUE" | python3 -c "import sys,json; print(json.load(sys.stdin)[\'$key\'])")\n'
         f'    export "$key=$val"\n'
         f'  done\n'

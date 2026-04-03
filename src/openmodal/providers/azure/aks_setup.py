@@ -6,8 +6,11 @@ import logging
 import subprocess
 
 from openmodal.providers.azure.config import (
-    CLUSTER_NAME, RESOURCE_GROUP, DEFAULT_LOCATION,
-    get_subscription_id, get_acr_name,
+    CLUSTER_NAME,
+    DEFAULT_LOCATION,
+    RESOURCE_GROUP,
+    get_acr_name,
+    get_subscription_id,
 )
 
 logger = logging.getLogger("openmodal.azure.aks_setup")

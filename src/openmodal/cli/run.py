@@ -42,7 +42,7 @@ def _parse_entrypoint_args(func, extra_args: tuple[str, ...]) -> dict:
         i += 1
 
     positional_values = [remaining_args[i] for i in range(len(remaining_args)) if i not in consumed]
-    for param, value in zip(positional_params, positional_values):
+    for param, value in zip(positional_params, positional_values, strict=False):
         if param.name not in kwargs:
             kwargs[param.name] = value
 
@@ -117,7 +117,7 @@ def run(ctx, app_path: str):
             kwargs = _parse_entrypoint_args(func_spec.func, tuple(ctx.args))
             func_spec.func(**kwargs)
         else:
-            for ep_name, ep_spec in app.local_entrypoints.items():
+            for _ep_name, ep_spec in app.local_entrypoints.items():
                 kwargs = _parse_entrypoint_args(ep_spec.func, tuple(ctx.args))
                 ep_spec.func(**kwargs)
     finally:

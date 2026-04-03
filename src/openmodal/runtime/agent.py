@@ -14,7 +14,7 @@ import logging
 import pickle
 import sys
 import traceback
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 logger = logging.getLogger("openmodal.agent")
 
@@ -49,9 +49,14 @@ class AgentHandler(BaseHTTPRequestHandler):
 
             module_name = request["module"]
             function_name = request["function"]
-            args, kwargs = pickle.loads(args_data) if args_data else ((), {})
 
+            # Import the user module before unpickling args, because pickled
+            # objects (e.g. dataclasses) reference their defining module.
+            # Also register as "_user_app" since that's how the client loads it.
             module = importlib.import_module(module_name)
+            sys.modules["_user_app"] = module
+
+            args, kwargs = pickle.loads(args_data) if args_data else ((), {})
             func = getattr(module, function_name)
             raw_func = getattr(func, "__wrapped__", func)
 
@@ -71,7 +76,7 @@ class AgentHandler(BaseHTTPRequestHandler):
 
         self.send_response(200)
         self.send_header("Content-Type", "application/octet-stream")
-        self.send_header("Content-Length", len(response_body))
+        self.send_header("Content-Length", str(len(response_body)))
         self.end_headers()
         self.wfile.write(response_body)
 
@@ -79,7 +84,7 @@ class AgentHandler(BaseHTTPRequestHandler):
         body = json.dumps(data).encode()
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", len(body))
+        self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
 

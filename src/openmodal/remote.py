@@ -10,7 +10,8 @@ import pickle
 import time
 import urllib.error
 import urllib.request
-from typing import Any, Iterator
+from collections.abc import Iterator
+from typing import Any
 
 from openmodal.function import FunctionSpec
 from openmodal.runtime.agent import DEFAULT_PORT
@@ -52,7 +53,11 @@ class RemoteExecutor:
         last_error = None
         for attempt in range(1 + retries):
             try:
-                remote_module = os.path.basename(spec.source_file).removesuffix(".py") if spec.source_file else spec.module_name
+                remote_module = (
+                    os.path.basename(spec.source_file).removesuffix(".py")
+                    if spec.source_file
+                    else spec.module_name
+                )
                 header = json.dumps({
                     "module": remote_module,
                     "function": spec.name,
@@ -94,14 +99,14 @@ class RemoteExecutor:
 
 def _create_agent_instance(app_name: str, func_name: str, spec: FunctionSpec) -> RemoteExecutor:
     """Create a container running the openmodal agent. Returns a connected RemoteExecutor."""
-    from openmodal.cli.console import Spinner, success, fail
+    from openmodal.cli.console import Spinner, fail, success
 
     provider = _get_provider(spec)
     try:
         provider.preflight_check(spec)
     except RuntimeError as e:
         fail(str(e))
-        raise SystemExit(1)
+        raise SystemExit(1) from e
     instance_name = app_name.lower().replace("_", "-")
     spec._app_name = app_name
 
@@ -123,7 +128,7 @@ def _create_agent_instance(app_name: str, func_name: str, spec: FunctionSpec) ->
             elapsed_create = int(spinner.elapsed)
     except (RuntimeError, TimeoutError) as e:
         fail(str(e))
-        raise SystemExit(1)
+        raise SystemExit(1) from e
 
     success(f"Container created. ({spec_label} \u2022 {ip} \u2022 {elapsed_create}s)")
 

@@ -32,6 +32,11 @@ def setup_cluster(gpu_types: list[str] | None = None, region: str = DEFAULT_REGI
     account = _get_account()
     gpu_types = gpu_types or ["h100"]
 
+    # Don't use --workload-pool: it forces GCS FUSE to use Workload Identity,
+    # which requires IAM admin to bind Kubernetes SAs to GCP SAs. Most users
+    # on shared company projects won't have that permission. Without it, GCS
+    # FUSE falls back to the node's compute service account, which works with
+    # bucket-level IAM that any user can set.
     _run([
         "gcloud", "container", "clusters", "create", CLUSTER_NAME,
         f"--region={region}",
@@ -39,7 +44,7 @@ def setup_cluster(gpu_types: list[str] | None = None, region: str = DEFAULT_REGI
         "--num-nodes=1",
         "--enable-autoscaling", "--min-nodes=0", "--max-nodes=1",
         "--addons=GcsFuseCsiDriver",
-        f"--workload-pool={project}.svc.id.goog",
+        "--scopes=storage-full",
         "--release-channel=regular",
         f"--project={project}",
     ])
@@ -89,6 +94,7 @@ def setup_cluster(gpu_types: list[str] | None = None, region: str = DEFAULT_REGI
             "--num-nodes=0",
             "--enable-autoscaling", "--min-nodes=0", "--max-nodes=4",
             "--disk-size=200GB", "--disk-type=pd-ssd",
+            "--scopes=storage-full",
             f"--node-labels=gpu-type={gpu_type.lower()}",
             "--node-taints=nvidia.com/gpu=present:NoSchedule",
             f"--project={project}",

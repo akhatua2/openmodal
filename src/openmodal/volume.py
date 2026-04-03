@@ -40,6 +40,10 @@ class Volume:
             self._bucket = uri.removeprefix("gs://")
         elif uri.startswith("s3://"):
             self._bucket = uri.removeprefix("s3://")
+        elif uri.startswith("azure://"):
+            # azure://storageaccount/containername
+            self._bucket = uri.removeprefix("azure://").split("/", 1)[1]
+            self._storage_account = uri.removeprefix("azure://").split("/", 1)[0]
         return uri
 
     def _ensure_bucket(self):

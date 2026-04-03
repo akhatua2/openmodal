@@ -23,6 +23,9 @@ def get_provider(spec=None, *, sandbox: bool = False):
     elif backend in ("aws", "eks"):
         from openmodal.providers.aws import get_provider as _get
         return _get()
+    elif backend in ("azure", "aks"):
+        from openmodal.providers.azure import get_provider as _get
+        return _get()
     elif backend == "gke":
         from openmodal.providers.gcp.gke import get_provider as _get
         return _get()

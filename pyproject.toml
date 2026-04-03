@@ -34,3 +34,8 @@ select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
 [tool.ty]
 python-version = "3.11"
 src = ["src"]
+
+[dependency-groups]
+dev = [
+    "mkdocs-material>=9.7.6",
+]

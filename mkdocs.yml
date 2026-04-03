@@ -1,0 +1,42 @@
+site_name: OpenModal
+site_url: https://akhatua2.github.io/openmodal
+repo_url: https://github.com/akhatua2/openmodal
+repo_name: akhatua2/openmodal
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: black
+      toggle:
+        icon: material/brightness-7
+        name: Dark mode
+    - scheme: slate
+      primary: black
+      toggle:
+        icon: material/brightness-4
+        name: Light mode
+  features:
+    - navigation.instant
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Setup: setup.md
+  - Examples:
+    - Overview: examples/index.md
+    - Hello World: examples/hello_world.md
+    - Web Scraper: examples/web_scraper.md
+    - vLLM Serving: examples/vllm_serving.md
+    - Sandboxes: examples/sandbox.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - tables

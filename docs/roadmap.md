@@ -12,9 +12,30 @@
 
 ## What's next
 
-### AWS provider
+### AWS provider (in progress)
 
-The provider interface is ready. An AWS provider using EKS would mirror the GKE implementation with EC2 Spot, ECR, and S3.
+EKS with Karpenter for auto-provisioning GPU nodes, KEDA for scale-to-zero, ECR for images, S3 Mountpoint CSI for volumes. Single EKS backend for all workloads — no EC2/EKS split.
+
+```bash
+openmodal --aws run examples/hello_world.py
+```
+
+### Azure provider
+
+AKS (Azure Kubernetes Service) with built-in node autoprovisioning, ACR for images, Azure Blob CSI for volumes. AKS is more batteries-included than EKS — KEDA comes as a native addon, and cluster creation is faster (~5 min vs ~15 min).
+
+| Azure Service | Equivalent |
+|---|---|
+| AKS | EKS / GKE |
+| ACR | ECR / Artifact Registry |
+| Azure Blob Storage | S3 / GCS |
+| NC/ND-series VMs | p5/g5 / a3/g2 |
+
+Main concern: GPU availability on Azure is more limited than AWS/GCP.
+
+```bash
+openmodal --azure run examples/hello_world.py
+```
 
 ### Scale-from-zero
 

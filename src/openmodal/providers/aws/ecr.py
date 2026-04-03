@@ -17,10 +17,10 @@ def ensure_repository(account_id: str, region: str, repo_name: str):
     import boto3
     ecr = boto3.client("ecr", region_name=region)
     try:
-        ecr.describe_repositories(repositoryNames=[repo_name])
-    except ecr.exceptions.RepositoryNotFoundException:
         ecr.create_repository(repositoryName=repo_name)
         logger.debug(f"Created ECR repository: {repo_name}")
+    except (ecr.exceptions.RepositoryAlreadyExistsException, Exception):
+        pass  # already exists, or another thread created it
 
 
 def docker_login(account_id: str, region: str):

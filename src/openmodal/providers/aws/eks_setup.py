@@ -106,10 +106,6 @@ def _install_karpenter(region: str, account_id: str):
     # Create the Karpenter controller policy if it doesn't exist
     _ensure_karpenter_policy(account_id, region)
 
-    # Install via Helm
-    _helm(["repo", "add", "karpenter", "https://charts.karpenter.sh"], check=False)
-    _helm(["repo", "update"])
-
     # Get cluster endpoint for Karpenter config
     result = _run([
         "aws", "eks", "describe-cluster", "--name", CLUSTER_NAME,
@@ -117,13 +113,14 @@ def _install_karpenter(region: str, account_id: str):
     ])
     cluster_endpoint = result.stdout.strip()
 
+    # Install Karpenter via OCI chart (the official distribution method)
     _helm([
-        "install", "karpenter", "karpenter/karpenter",
+        "install", "karpenter", "oci://public.ecr.aws/karpenter/karpenter",
+        "--version", "1.4.0",
         "--namespace", "kube-system",
         "--set", f"settings.clusterName={CLUSTER_NAME}",
         "--set", f"settings.clusterEndpoint={cluster_endpoint}",
-        "--set", f"serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn=arn:aws:iam::{account_id}:role/KarpenterController-{CLUSTER_NAME}",
-        "--wait",
+        "--wait", "--timeout", "5m",
     ])
 
 

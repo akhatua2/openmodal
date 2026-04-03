@@ -176,11 +176,25 @@ class EKSProvider(CloudProvider):
 
     # ── Core instance management ──────────────────────────────────────
 
+    def _ensure_default_agent_image(self, source_file: str | None = None) -> str:
+        """Build a default agent image with openmodal installed and push to ECR."""
+        import os
+        from openmodal.image import Image, OPENMODAL_PIP_INSTALL
+        img = Image.debian_slim()
+        img = img._append(OPENMODAL_PIP_INSTALL, "ENV PYTHONPATH=/opt")
+        if source_file and os.path.isfile(source_file):
+            filename = os.path.basename(source_file)
+            img = img._append(f"COPY {filename} /opt/{filename}")
+            img._context_files[filename] = source_file
+        img = img._append('CMD ["python", "-m", "openmodal.runtime.agent"]')
+        return img.build_and_push("default-agent", provider=self)
+
     def create_instance(
         self, spec: FunctionSpec, image_uri: str | None = None, name: str | None = None,
     ) -> tuple[str, str]:
         name = name or _k8s_name(getattr(spec, "_app_name", "app"))
-        image_uri = image_uri or ""
+        if image_uri is None:
+            image_uri = self._ensure_default_agent_image(spec.source_file)
 
         if spec.web_server_port:
             return self._create_deployment(spec, image_uri, name)
@@ -295,9 +309,21 @@ class EKSProvider(CloudProvider):
         self._v1.create_namespaced_pod(NAMESPACE, pod)
         self._wait_for_pod_running(name)
 
-        pod_info = self._v1.read_namespaced_pod(name, NAMESPACE)
-        ip = pod_info.status.pod_ip
-        return name, ip
+        # EKS pod IPs aren't directly routable from the client machine,
+        # so we use kubectl port-forward to proxy the connection.
+        port = spec.web_server_port or 50051
+        self._start_port_forward(name, port)
+        return name, "localhost"
+
+    def _start_port_forward(self, pod_name: str, port: int):
+        """Start kubectl port-forward in the background."""
+        import subprocess
+        self._port_forward_proc = subprocess.Popen(
+            ["kubectl", "port-forward", f"pod/{pod_name}", f"{port}:{port}", "-n", NAMESPACE],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        # Give it a moment to establish
+        time.sleep(2)
 
     def _wait_for_external_ip(self, name: str, timeout: int = 300) -> str:
         """Wait for LoadBalancer to get an external IP/hostname."""
@@ -331,6 +357,11 @@ class EKSProvider(CloudProvider):
                 raise RuntimeError(f"Pod {name} entered {pod.status.phase} state")
 
     def delete_instance(self, instance_name: str) -> None:
+        # Kill port-forward if running
+        if hasattr(self, "_port_forward_proc") and self._port_forward_proc:
+            self._port_forward_proc.terminate()
+            self._port_forward_proc = None
+
         from kubernetes.client import BatchV1Api, CustomObjectsApi
         batch_v1 = BatchV1Api()
         custom = CustomObjectsApi()

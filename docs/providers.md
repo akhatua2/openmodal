@@ -39,18 +39,37 @@ openmodal run examples/sandbox.py              # auto-detects GKE (sandboxes)
 
 You can also force a backend if needed: `OPENMODAL_PROVIDER=gce` or `OPENMODAL_PROVIDER=gke`.
 
-## Planned: AWS (EKS)
+## AWS (in progress)
 
-Same architecture as GKE but on AWS. The provider interface is ready — an AWS provider would implement `CloudProvider` using EKS, ECR, and S3.
+Single EKS backend for all workloads — Karpenter auto-provisions the right instance type based on your GPU request.
 
-| GCP | AWS Equivalent |
+```bash
+openmodal --aws run examples/hello_world.py
+```
+
+| Feature | How it works |
 |---|---|
-| GKE | EKS |
-| GCE | EC2 |
-| Cloud Build | Local build + ECR push |
-| Artifact Registry | ECR |
-| GCS volumes | S3 + Mountpoint CSI |
-| Spot instances | EC2 Spot |
+| `f.remote()` | EKS pod with your function |
+| Sandboxes | EKS pod + `kubectl exec` |
+| GPU | Karpenter provisions spot GPU nodes (p5, g5, g6) |
+| Volumes | S3 + Mountpoint CSI driver |
+| Image build | Local `docker build` + ECR push |
+| Scale-to-zero | KEDA ScaledObject |
+| Scaling | Karpenter auto-provisioning |
+
+Auto-creates the EKS cluster on first run (~15 min one-time setup).
+
+## Planned: Azure (AKS)
+
+AKS with built-in node autoprovisioning, ACR for images, Azure Blob CSI for volumes.
+
+| Feature | Azure Service |
+|---|---|
+| Kubernetes | AKS |
+| Images | ACR |
+| Volumes | Azure Blob Storage CSI |
+| GPU nodes | NC/ND-series VMs |
+| Scale-to-zero | KEDA (native AKS addon) |
 
 ## Adding a new provider
 

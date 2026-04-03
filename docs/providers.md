@@ -59,17 +59,25 @@ openmodal --aws run examples/hello_world.py
 
 Auto-creates the EKS cluster on first run (~15 min one-time setup).
 
-## Planned: Azure (AKS)
+## Azure
 
-AKS with built-in node autoprovisioning, ACR for images, Azure Blob CSI for volumes.
+Single AKS backend for all workloads — KEDA comes as a built-in addon, so there's nothing extra to install.
 
-| Feature | Azure Service |
+```bash
+openmodal --azure run examples/hello_world.py
+```
+
+| Feature | How it works |
 |---|---|
-| Kubernetes | AKS |
-| Images | ACR |
-| Volumes | Azure Blob Storage CSI |
-| GPU nodes | NC/ND-series VMs |
+| `f.remote()` | AKS pod with your function |
+| Sandboxes | AKS pod + `kubectl exec` |
+| GPU | NC/ND-series VMs (not yet tested) |
+| Volumes | Azure Blob Storage CSI driver |
+| Image build | Local `docker build` + ACR push |
 | Scale-to-zero | KEDA (native AKS addon) |
+| Scaling | AKS node autoprovisioning |
+
+Auto-creates the AKS cluster on first run (~5 min one-time setup).
 
 ## Adding a new provider
 

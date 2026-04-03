@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.2 (2026-04-03)
+
+### Added
+- **Azure provider** — AKS with built-in KEDA addon, ACR, Azure Blob Storage CSI. `openmodal --azure run`
+- **`--azure` CLI flag** for running on Azure AKS
+
+### Tested
+- `hello_world`, `sandbox`, `webscraper` all pass on Azure
+- GPU testing deferred to a later release
+
 ## 0.3.1 (2026-04-03)
 
 ### Added

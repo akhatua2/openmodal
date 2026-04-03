@@ -23,6 +23,7 @@ results = train.map(configs)
 - Custom images, secrets, retries, volumes
 - GCP with spot GPUs (H100, A100, L4)
 - AWS with EKS, Karpenter, KEDA
+- Azure with AKS, ACR, KEDA
 - Local Docker provider — no cloud account needed
 - CLI: `openmodal run`, `deploy`, `stop`, `ps`
 
@@ -42,6 +43,10 @@ openmodal run examples/hello_world.py
 pip install "openmodal[aws]"
 aws login
 openmodal --aws run examples/hello_world.py
+
+# Azure
+az login
+openmodal --azure run examples/hello_world.py
 ```
 
 [Setup guide](docs/setup.md) · [Examples](docs/examples/) · [Modal docs](https://modal.com/docs/guide) (same API, just swap the import)

@@ -23,6 +23,7 @@ results = train.map(configs)
 - Local Docker provider — no cloud account needed
 - GCP provider with spot GPUs (H100, A100, L4)
 - AWS provider with EKS, Karpenter, KEDA
+- Azure provider with AKS, ACR, KEDA
 - CLI: `openmodal run`, `deploy`, `stop`, `ps`
 
 ## Quick start
@@ -55,6 +56,16 @@ results = train.map(configs)
     ```
 
     Creates an EKS cluster on first run (~15 min one-time).
+
+=== "Azure"
+
+    ```bash
+    pip install openmodal
+    az login
+    openmodal --azure run examples/hello_world.py
+    ```
+
+    Creates an AKS cluster on first run (~5 min one-time).
 
 ## How it compares to Modal
 

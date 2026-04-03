@@ -9,26 +9,10 @@
 - Local Docker provider (CPU and GPU)
 - GCP provider with spot GPUs (H100, A100, L4)
 - AWS provider with EKS, Karpenter, KEDA, ECR, S3
+- Azure provider with AKS, ACR, KEDA, Azure Blob Storage CSI
 - Published on [PyPI](https://pypi.org/project/openmodal/) with auto-publish on version bump
 
 ## What's next
-
-### Azure provider
-
-AKS (Azure Kubernetes Service) with built-in node autoprovisioning, ACR for images, Azure Blob CSI for volumes. AKS is more batteries-included than EKS — KEDA comes as a native addon, and cluster creation is faster (~5 min vs ~15 min).
-
-| Azure Service | Equivalent |
-|---|---|
-| AKS | EKS / GKE |
-| ACR | ECR / Artifact Registry |
-| Azure Blob Storage | S3 / GCS |
-| NC/ND-series VMs | p5/g5 / a3/g2 |
-
-Main concern: GPU availability on Azure is more limited than AWS/GCP.
-
-```bash
-openmodal --azure run examples/hello_world.py
-```
 
 ### Scale-from-zero
 

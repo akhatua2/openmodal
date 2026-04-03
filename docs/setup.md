@@ -95,3 +95,25 @@ openmodal --aws run examples/hello_world.py
 ```
 
 On first run, OpenModal creates an EKS cluster (~15 min one-time setup). After that, it reuses the existing cluster.
+
+## Azure
+
+### Prerequisites
+
+- Azure account with a subscription
+- `az` CLI installed and authenticated
+- Docker installed (for image building)
+
+### Authenticate
+
+```bash
+az login
+```
+
+### Verify
+
+```bash
+openmodal --azure run examples/hello_world.py
+```
+
+On first run, OpenModal creates an AKS cluster with the KEDA addon (~5 min one-time setup). After that, it reuses the existing cluster.

@@ -1,10 +1,10 @@
 # Examples
 
-OpenModal is API-compatible with Modal. If you've seen a Modal example, you can run it
-on OpenModal by replacing `import modal` with `import openmodal`.
+OpenModal is API-compatible with Modal. Replace `import modal` with `import openmodal` and everything works.
 
-For hundreds of additional examples, see the [Modal examples gallery](https://modal.com/docs/examples) —
-the same code works with OpenModal on your own GCP infrastructure.
+All examples work on both local Docker (`--local`) and GCP.
+
+For hundreds of additional examples, see the [Modal examples gallery](https://modal.com/docs/examples).
 
 ## Getting started
 
@@ -13,7 +13,7 @@ the same code works with OpenModal on your own GCP infrastructure.
 
 ## GPU serving
 
-- [vLLM serving](vllm_serving.md) — deploy a quantized LLM on H100 with auto scale-to-zero
+- [vLLM serving](vllm_serving.md) — deploy an LLM on a GPU with auto scale-to-zero
 
 ## Sandboxes
 
@@ -21,8 +21,8 @@ the same code works with OpenModal on your own GCP infrastructure.
 
 ## Training
 
-- [SFT finetuning](sft_finetune.md) — LoRA finetuning with Unsloth on a single H100
+- [SFT finetuning](sft_finetune.md) — LoRA finetuning with Unsloth on a GPU
 
 ## Benchmarks
 
-- [SWE-bench with Harbor](harbor.md) — run SWE-bench evaluations on your own GCP
+- [SWE-bench with Harbor](harbor.md) — run SWE-bench evaluations with OpenModal as compute backend

@@ -1,42 +1,49 @@
 # Setup
 
-## Prerequisites
-
-- Python 3.10+
-- GCP account with a project
-- `gcloud` CLI installed and authenticated
-
 ## Install
 
 ```bash
 pip install openmodal
 ```
 
-Or from Test PyPI (current):
+## Local (Docker)
+
+If you just want to try OpenModal without a cloud account, all you need is Docker:
 
 ```bash
-pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ openmodal
+openmodal --local run examples/hello_world.py
 ```
 
-## GCP Setup
+That's it. No cloud credentials, no API keys. Functions run in Docker containers on your machine.
 
-Authenticate with your GCP project:
+If you have NVIDIA GPUs and the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) installed, GPU functions work too.
+
+## GCP
+
+For cloud GPUs, spot instances, and auto scale-to-zero, you'll need a GCP project.
+
+### Prerequisites
+
+- GCP account with a project
+- `gcloud` CLI installed
+
+### Authenticate
 
 ```bash
 gcloud auth login
 gcloud config set project YOUR_PROJECT_ID
 ```
 
-OpenModal needs the following GCP APIs enabled:
+### Enable APIs
 
 ```bash
 gcloud services enable compute.googleapis.com
+gcloud services enable container.googleapis.com
 gcloud services enable cloudbuild.googleapis.com
 gcloud services enable artifactregistry.googleapis.com
-gcloud services enable secretmanager.googleapis.com
 ```
 
-## Verify
+### Verify
 
 ```bash
 openmodal run examples/hello_world.py
@@ -56,3 +63,5 @@ hello 1000
 ✓ Containers cleaned up.
 ✓ App completed.
 ```
+
+OpenModal auto-detects the right backend: GKE for GPU workloads and sandboxes, GCE for simple compute.

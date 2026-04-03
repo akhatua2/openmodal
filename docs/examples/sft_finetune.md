@@ -1,6 +1,6 @@
 # SFT finetuning with Unsloth
 
-Finetune an LLM with LoRA on a single GPU using [Unsloth](https://github.com/unslothai/unsloth)'s optimized training. Based on [Modal's Unsloth example](https://modal.com/docs/examples/unsloth-finetune).
+Finetune an LLM with LoRA on a single GPU using [Unsloth](https://github.com/unslothai/unsloth)'s optimized training.
 
 ## Run
 
@@ -16,11 +16,11 @@ openmodal run examples/sft_finetune.py --model-name unsloth/Qwen3-4B --max-steps
 
 ## What it does
 
-1. Spins up an H100 GPU on GKE
+1. Provisions a GPU (H100 spot by default)
 2. Downloads Qwen3-4B (4-bit quantized) and the FineTome-100k dataset
 3. Applies LoRA adapters and trains with Unsloth's optimized kernels
-4. Saves checkpoints and final model to persistent GCS volumes
-5. Supports resuming from checkpoints if interrupted
+4. Saves checkpoints and final model to persistent volumes
+5. Auto-retries if the spot instance is preempted
 
 ## The code
 
@@ -70,19 +70,9 @@ def main(model_name="unsloth/Qwen3-4B", max_steps=5):
 
 | Feature | How it's used |
 |---|---|
-| `gpu="H100"` | Single H100 for training |
-| `Volume.from_name(create_if_missing=True)` | Persistent storage for model weights, datasets, checkpoints |
-| `retries=3` | Auto-retry on preemption (spot instances) |
+| `gpu="H100"` | Single GPU for training |
+| `Volume.from_name(create_if_missing=True)` | Persistent storage for model weights and checkpoints |
+| `retries=3` | Auto-retry on spot preemption |
 | `timeout=6*60*60` | 6 hour max training time |
-| `finetune.remote(config)` | Runs training on the cloud GPU |
+| `finetune.remote(config)` | Runs training on the GPU |
 | CLI args (`--max-steps`, `--lora-r`) | Tweak hyperparameters from command line |
-
-## Compared to Modal
-
-The only difference from Modal's example is the import line:
-
-```python
-import openmodal  # instead of: import modal
-```
-
-Everything else — image definition, volumes, GPU selection, remote execution — is the same API.

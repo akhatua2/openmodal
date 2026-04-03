@@ -1,8 +1,6 @@
 # Web scraper
 
-This example shows how to build a distributed web scraper with OpenModal,
-progressing from a simple local script to parallel remote execution with
-custom container images.
+Build a distributed web scraper, progressing from a local script to parallel remote execution with custom images.
 
 ## Step 1: Scrape links locally
 
@@ -22,11 +20,6 @@ def get_links(url):
 
 if __name__ == "__main__":
     print(get_links("http://example.com"))
-```
-
-```bash
-python webscraper.py
-# ['https://www.iana.org/domains/example']
 ```
 
 ## Step 2: Run it remotely
@@ -56,22 +49,15 @@ def main(url: str = "http://example.com"):
 ```
 
 ```bash
-openmodal run examples/webscraper.py --url http://example.com
+openmodal --local run examples/webscraper.py --url http://example.com
+# or: openmodal run examples/webscraper.py --url http://example.com  (GCP)
 ```
 
-```
-✓ Initialized.
-✓ Created objects.
-['https://iana.org/domains/example']
-✓ App completed.
-```
-
-The function ran on a GCE container, not on your machine.
+The function ran inside a container, not on your machine.
 
 ## Step 3: Add dependencies with a custom image
 
-Use `requests` and `beautifulsoup4` for better HTML parsing.
-Define a custom container image with the dependencies:
+Use `requests` and `beautifulsoup4` for better HTML parsing:
 
 ```python
 import openmodal
@@ -98,18 +84,13 @@ def main():
             print(link)
 ```
 
-```bash
-openmodal run examples/webscraper_requests.py
-```
-
-The first run builds the Docker image (takes ~2 minutes). Subsequent runs
-use the cached image and start much faster.
+The first run builds the Docker image. Subsequent runs use the cached image.
 
 ## What this demonstrates
 
 | Feature | How it's used |
 |---|---|
-| `f.remote(url)` | Run a single function call on GCP |
+| `f.remote(url)` | Run a single function call in a container |
 | `f.map(urls)` | Run multiple calls in parallel |
 | `Image.debian_slim()` | Base container image with Python |
 | `.pip_install(...)` | Add Python packages to the image |

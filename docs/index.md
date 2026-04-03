@@ -1,8 +1,6 @@
 # OpenModal
 
-A cloud-agnostic runtime that implements [Modal](https://modal.com)'s Python interface.
-
-I built this because I wanted to run Modal on my own GCP account. Modal's API is clean and I didn't want to learn a different one. So OpenModal lets you write the same code and run it on your own infrastructure.
+An open-source runtime that implements [Modal](https://modal.com)'s Python interface. Write the same code, run it on your own infrastructure.
 
 ```python
 import openmodal
@@ -21,18 +19,42 @@ results = train.map(configs)
 - `f.local()`, `f.remote()`, `f.map()`
 - GPU serving with auto scale-to-zero
 - Custom images, secrets, retries, volumes
-- GKE with spot GPUs (H100, A100, L4)
+- Sandboxes for SWE agents
+- Local Docker provider — no cloud account needed
+- GCP provider with spot GPUs (H100, A100, L4)
 - CLI: `openmodal run`, `deploy`, `stop`, `ps`
 
-## Get started
+## Quick start
 
-```bash
-pip install openmodal
-gcloud auth login
-openmodal run examples/hello_world.py
+=== "Local (Docker)"
+
+    ```bash
+    pip install openmodal
+    openmodal --local run examples/hello_world.py
+    ```
+
+    Just needs Docker installed. No cloud account, no setup.
+
+=== "GCP"
+
+    ```bash
+    pip install openmodal
+    gcloud auth login
+    openmodal run examples/hello_world.py
+    ```
+
+    See the [setup guide](setup.md) for GCP prerequisites.
+
+## How it compares to Modal
+
+The only difference is the import line:
+
+```diff
+- import modal
++ import openmodal
 ```
 
-[Setup guide](setup.md) · [Examples](examples/index.md) · [Modal docs](https://modal.com/docs/guide) (same API, just swap the import)
+For hundreds of additional examples, see the [Modal examples gallery](https://modal.com/docs/examples) — the same code works with OpenModal.
 
 ## License
 

@@ -19,32 +19,25 @@ harbor run \
   --n-tasks 1
 ```
 
-This creates a sandbox on GKE, runs the agent against a real SWE-bench task, verifies the patch, and reports results.
+This creates a sandbox, runs the agent against a SWE-bench task, verifies the patch, and reports results.
 
 ## What happens
 
 1. Harbor downloads a SWE-bench task (e.g., a Django bug)
-2. OpenModal creates a Kubernetes pod with the task's Docker image
-3. The agent runs inside the pod — reads the bug, edits code, runs tests
+2. OpenModal creates a container with the task's Docker image
+3. The agent runs inside the container — reads the bug, edits code, runs tests
 4. Harbor uploads test files, runs verification, reports pass/fail
-5. Pod is cleaned up
+5. Container is cleaned up
 
 ## Options
 
 **Different agents:**
 ```bash
-# Claude Code
 harbor run --agent claude-code --model anthropic/claude-sonnet-4-5-20250929 \
   --environment-import-path openmodal.integrations.harbor_env:ModalEnvironment \
   --dataset swe-bench/swe-bench-verified --n-tasks 5
 
-# OpenHands
 harbor run --agent openhands --model openai/gpt-5.4 \
-  --environment-import-path openmodal.integrations.harbor_env:ModalEnvironment \
-  --dataset swe-bench/swe-bench-verified --n-tasks 5
-
-# SWE-agent
-harbor run --agent swe-agent --model openai/gpt-5.4 \
   --environment-import-path openmodal.integrations.harbor_env:ModalEnvironment \
   --dataset swe-bench/swe-bench-verified --n-tasks 5
 ```
@@ -63,16 +56,16 @@ harbor view jobs
 
 ## How it compares to Modal
 
-The only difference from running Harbor with Modal is the `--environment-import-path` flag. With Modal:
-
+With Modal:
 ```bash
-harbor run --agent mini-swe-agent --model openai/gpt-5.4 --env modal --dataset swe-bench/swe-bench-verified
+harbor run --agent mini-swe-agent --env modal --dataset swe-bench/swe-bench-verified
 ```
 
 With OpenModal:
-
 ```bash
-harbor run --agent mini-swe-agent --model openai/gpt-5.4 --environment-import-path openmodal.integrations.harbor_env:ModalEnvironment --dataset swe-bench/swe-bench-verified
+harbor run --agent mini-swe-agent \
+  --environment-import-path openmodal.integrations.harbor_env:ModalEnvironment \
+  --dataset swe-bench/swe-bench-verified
 ```
 
-Same agents, same datasets, same results — just runs on your own GCP infrastructure.
+Same agents, same datasets, same results — runs on your own infrastructure.

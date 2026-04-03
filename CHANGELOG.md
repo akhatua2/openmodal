@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.3 (2026-04-03)
+
+### Added
+- **`openmodal setup`** — interactive setup wizard with arrow-key provider picker
+- Per-provider setup: checks prerequisites, selects GCP project / Azure subscription, enables APIs
+
+### Removed
+- **GCE bare VM provider** — GCP now uses GKE for all workloads, simplifying the codebase
+
+### Changed
+- GCP defaults to GKE instead of auto-detecting between GCE and GKE
+- Simplified provider routing (removed `gce`/`eks`/`aks` aliases)
+- Docs workflow only triggers on changes to `docs/` or `mkdocs.yml`
+
 ## 0.3.2 (2026-04-03)
 
 ### Added

@@ -151,7 +151,7 @@ e2-standard-8 node (8 CPU, 32 GB RAM)
 → fits ~32 sandbox pods at 0.25 CPU each
 ```
 
-Without resource requests, the scheduler thinks every pod needs zero resources, packs them all on one node, and the autoscaler never adds more nodes.
+OpenModal sets these defaults automatically so the autoscaler works out of the box.
 
 ## Remote function execution
 
@@ -244,7 +244,7 @@ sequenceDiagram
     CA->>Cloud: Remove idle nodes
 ```
 
-The key: **pods must have resource requests**. The scheduler uses requests to decide how many pods fit on a node. Without requests, everything gets packed onto one node and the autoscaler never fires.
+OpenModal sets default resource requests (0.25 CPU, 256 MB) on every sandbox pod, so the scheduler correctly distributes pods across nodes and the autoscaler fires when needed.
 
 ### Provider comparison
 

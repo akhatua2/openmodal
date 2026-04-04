@@ -52,6 +52,9 @@ extra_css:
   - stylesheets/extra.css
   - stylesheets/mermaid.css
 
+extra_javascript:
+  - javascripts/mermaid-init.js
+
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true

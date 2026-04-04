@@ -557,8 +557,8 @@ class GKEProvider(CloudProvider):
             tolerations.append(client.V1Toleration(
                 key="nvidia.com/gpu", operator="Exists", effect="NoSchedule",
             ))
-        resources.requests["cpu"] = str(cpu or 1)
-        resources.requests["memory"] = f"{memory or 1024}Mi"
+        resources.requests["cpu"] = str(cpu or 0.25)
+        resources.requests["memory"] = f"{memory or 256}Mi"
 
         env_list = [client.V1EnvVar(name=k, value=v) for k, v in (env_vars or {}).items()]
 

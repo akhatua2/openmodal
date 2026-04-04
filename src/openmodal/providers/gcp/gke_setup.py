@@ -67,7 +67,7 @@ def setup_cluster(gpu_types: list[str] | None = None, region: str = DEFAULT_REGI
         "gcloud", "container", "node-pools", "create", "sandbox-pool",
         f"--cluster={CLUSTER_NAME}",
         f"--region={region}",
-        "--machine-type=e2-small",
+        "--machine-type=e2-standard-8",
         "--num-nodes=0",
         "--enable-autoscaling", "--min-nodes=0", "--max-nodes=100",
         "--disk-size=100GB",

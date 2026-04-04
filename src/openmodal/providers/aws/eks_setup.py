@@ -219,7 +219,8 @@ def _create_gpu_nodepool():
                     "requirements": [
                         {"key": "karpenter.sh/capacity-type", "operator": "In", "values": ["spot", "on-demand"]},
                         {"key": "node.kubernetes.io/instance-type", "operator": "In", "values": [
-                            "t3.medium", "t3.large", "m5.large", "m5.xlarge",
+                            "t3.medium", "t3.large", "t3.xlarge", "t3.2xlarge",
+                            "m5.large", "m5.xlarge", "m5.2xlarge",
                         ]},
                         {"key": "kubernetes.io/arch", "operator": "In", "values": ["amd64"]},
                     ],

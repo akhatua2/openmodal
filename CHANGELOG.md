@@ -3,12 +3,18 @@
 ## 0.3.9 (2026-04-04)
 
 ### Changed
-- Default sandbox resource requests: 1 CPU, 1 GB RAM on all K8s providers — fixes cluster autoscaler not scaling up
-- Sandbox node pool max nodes: 10 → 100
+- Default sandbox resource requests: 0.25 CPU, 256 MB RAM on all K8s providers — fixes cluster autoscaler not scaling up when many sandboxes are created
+- GCP sandbox node pool: `e2-small` → `e2-standard-8` (fits ~32 pods/node), max nodes 10 → 100
+- AWS Karpenter general nodepool: added larger instance types (`t3.xlarge`, `t3.2xlarge`, `m5.2xlarge`)
+- Azure default node pool: `Standard_B2s` → `Standard_D8s_v5`, max nodes 3 → 100
 - `openmodal setup gcp` auto-installs `kubectl` and `gke-gcloud-auth-plugin` if missing
 
 ### Fixed
 - GKE preflight now checks for `gke-gcloud-auth-plugin` with a clear error message
+
+### Tested
+- Sandbox creation and exec verified on GCP (GKE), AWS (EKS), and Azure (AKS)
+- GKE autoscaling verified: 30 sandboxes triggers node scale-up within 60s
 
 ## 0.3.8 (2026-04-04)
 

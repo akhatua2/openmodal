@@ -154,8 +154,15 @@ def aws():
     result = _run(["aws", "sts", "get-caller-identity"])
     if result.returncode != 0:
         step_fail("Not authenticated")
-        step_hint("Run: aws configure")
-        return
+        if confirm("Log in now?"):
+            import subprocess
+            subprocess.run(["aws", "login"])
+            result = _run(["aws", "sts", "get-caller-identity"])
+            if result.returncode != 0:
+                step_fail("Login failed")
+                return
+        else:
+            return
     identity = json.loads(result.stdout)
     step_ok(f"Logged in as {identity.get('Arn', 'unknown')}")
 

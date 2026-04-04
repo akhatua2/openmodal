@@ -146,7 +146,7 @@ class EKSProvider(CloudProvider):
             capture_output=True, text=True,
         )
         if result.returncode != 0:
-            raise RuntimeError("AWS credentials not configured. Run: aws configure")
+            raise RuntimeError("AWS credentials not configured. Run: aws login")
 
     def __init__(self):
         # Always point kubectl at our EKS cluster before loading config.
@@ -165,11 +165,14 @@ class EKSProvider(CloudProvider):
         self._apps_v1 = client.AppsV1Api()
 
     def _auto_provision_cluster(self):
+        import logging as _logging
+
         from openmodal.cli.console import Spinner, success
         from openmodal.providers.aws.eks_setup import setup_cluster
-
+        _logging.disable(_logging.INFO)
         with Spinner("Creating EKS cluster (one-time, ~15 min)...") as spinner:
             setup_cluster()
+        _logging.disable(_logging.NOTSET)
         success(f"EKS cluster ready. ({int(spinner.elapsed)}s)")
 
     def _delete_if_exists(self, delete_fn, read_fn, timeout: int = 30):
@@ -259,7 +262,7 @@ class EKSProvider(CloudProvider):
         )
         self._v1.create_namespaced_service(NAMESPACE, service)
 
-        if spec.scaledown_window > 0:
+        if spec.scaledown_window > 0 and spec.web_server_port:
             self._create_keda_scaledown(name, spec.scaledown_window, spec.web_server_port)
 
         ip = self._wait_for_external_ip(name, timeout=300)
@@ -309,13 +312,6 @@ class EKSProvider(CloudProvider):
 
     def _create_pod(self, spec: FunctionSpec, image_uri: str, name: str) -> tuple[str, str]:
         pod = _build_pod_spec(spec, image_uri, name)
-
-        try:
-            self._v1.delete_namespaced_pod(name, NAMESPACE, grace_period_seconds=0)
-            time.sleep(2)
-        except client.exceptions.ApiException:
-            pass
-
         self._v1.create_namespaced_pod(NAMESPACE, pod)
         timeout = 1200 if spec.gpu else 600
         self._wait_for_pod_running(name, timeout=timeout)
@@ -456,7 +452,7 @@ class EKSProvider(CloudProvider):
 
     def machine_spec_str(self, gpu_str: str) -> str:
         if not gpu_str:
-            return "t3.medium"
+            return machine_spec_str("t3.small")
         instance_type, gpu_name, count = parse_gpu_config(gpu_str)
         return machine_spec_str(instance_type, gpu_name, count)
 
@@ -470,12 +466,6 @@ class EKSProvider(CloudProvider):
         gpu: str | None = None, cpu: float | None = None, memory: int | None = None,
         env_vars: dict[str, str] | None = None,
     ):
-        try:
-            self._v1.delete_namespaced_pod(name, NAMESPACE, grace_period_seconds=0)
-            time.sleep(2)
-        except client.exceptions.ApiException:
-            pass
-
         image = image_uri or "ubuntu:24.04"
 
         resources = client.V1ResourceRequirements(requests={}, limits={})

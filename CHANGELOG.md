@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.3.7 (2026-04-04)
+
+### Added
+- **Benchmark suite** — `benchmarks/` with tasks for sandbox create, exec, scaling, lifecycle, and image tests. Run with `python -m benchmarks.runner`
+- GKE provider now builds a default agent image when no image is specified
+- Unique pod names (UUID suffix) — eliminates name conflicts and removes `sleep(2)` from pod creation
+
+### Changed
+- Smaller default nodes: GCP `e2-small` (2 CPU, 2GB), AWS `t3.small` (2 CPU, 2GB)
+- AWS and Azure now show `2 vCPU, 4 GB RAM` instead of raw machine type names
+- Disabled log streaming during `f.remote()` and `f.map()` — use `openmodal logs` instead
+- Clean spinner output during cluster creation (no more log messages leaking through)
+
+### Fixed
+- GKE `create_instance` crashing with empty image when no `image=` specified
+- Type errors in KEDA scaledown calls across AWS and Azure providers
+
 ## 0.3.6 (2026-04-03)
 
 ### Added

@@ -169,8 +169,11 @@ class AKSProvider(CloudProvider):
             update_kubeconfig()
             return
 
+        import logging as _logging
+        _logging.disable(_logging.INFO)
         with Spinner("Creating AKS cluster (one-time, ~5 min)...") as spinner:
             setup_cluster()
+        _logging.disable(_logging.NOTSET)
         success(f"AKS cluster ready. ({int(spinner.elapsed)}s)")
 
     def _delete_if_exists(self, delete_fn, read_fn, timeout: int = 30):
@@ -259,7 +262,7 @@ class AKSProvider(CloudProvider):
         )
         self._v1.create_namespaced_service(NAMESPACE, service)
 
-        if spec.scaledown_window > 0:
+        if spec.scaledown_window > 0 and spec.web_server_port:
             self._create_keda_scaledown(name, spec.scaledown_window, spec.web_server_port)
 
         ip = self._wait_for_external_ip(name, timeout=300)
@@ -305,13 +308,6 @@ class AKSProvider(CloudProvider):
 
     def _create_pod(self, spec: FunctionSpec, image_uri: str, name: str) -> tuple[str, str]:
         pod = _build_pod_spec(spec, image_uri, name)
-
-        try:
-            self._v1.delete_namespaced_pod(name, NAMESPACE, grace_period_seconds=0)
-            time.sleep(2)
-        except client.exceptions.ApiException:
-            pass
-
         self._v1.create_namespaced_pod(NAMESPACE, pod)
         timeout = 1200 if spec.gpu else 600
         self._wait_for_pod_running(name, timeout=timeout)
@@ -443,7 +439,7 @@ class AKSProvider(CloudProvider):
 
     def machine_spec_str(self, gpu_str: str) -> str:
         if not gpu_str:
-            return "Standard_B2s"
+            return machine_spec_str("Standard_B2s")
         vm_size, gpu_name, count = parse_gpu_config(gpu_str)
         return machine_spec_str(vm_size, gpu_name, count)
 
@@ -457,12 +453,6 @@ class AKSProvider(CloudProvider):
         gpu: str | None = None, cpu: float | None = None, memory: int | None = None,
         env_vars: dict[str, str] | None = None,
     ):
-        try:
-            self._v1.delete_namespaced_pod(name, NAMESPACE, grace_period_seconds=0)
-            time.sleep(2)
-        except client.exceptions.ApiException:
-            pass
-
         image = image_uri or "ubuntu:24.04"
         resources = client.V1ResourceRequirements(requests={}, limits={})
         node_selector = {}

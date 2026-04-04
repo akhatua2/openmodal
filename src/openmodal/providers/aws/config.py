@@ -19,6 +19,7 @@ GPU_MAP: dict[str, tuple[str, str, int]] = {
 
 # instance_type -> (vCPU, RAM GB)
 MACHINE_SPECS: dict[str, tuple[int, int]] = {
+    "t3.small":       (2, 2),
     "t3.medium":      (2, 4),
     "t3.large":       (2, 8),
     "g4dn.xlarge":    (4, 16),

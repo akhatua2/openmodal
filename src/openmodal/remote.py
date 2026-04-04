@@ -46,6 +46,7 @@ class RemoteExecutor:
     def _stop_log_stream(self):
         if hasattr(self, "_log_proc") and self._log_proc:
             self._log_proc.terminate()
+            self._log_proc.wait()
             self._log_proc = None
 
     def execute(self, spec: FunctionSpec, *args: Any, retries: int = 0, **kwargs: Any) -> Any:
@@ -65,8 +66,6 @@ class RemoteExecutor:
                 args_data = pickle.dumps((args, kwargs))
                 payload = header + b"\n" + args_data
 
-                self._start_log_stream()
-
                 req = urllib.request.Request(
                     f"{self._base_url}/execute",
                     data=payload,
@@ -76,13 +75,10 @@ class RemoteExecutor:
                 with urllib.request.urlopen(req, timeout=6 * 60 * 60) as resp:
                     result = pickle.loads(resp.read())
 
-                self._stop_log_stream()
-
                 if not result["ok"]:
                     raise RuntimeError(f"Remote execution failed:\n{result['traceback']}")
                 return result["result"]
             except Exception as exc:
-                self._stop_log_stream()
                 last_error = exc
                 if attempt < retries:
                     logger.warning(f"Attempt {attempt + 1} failed, retrying ({retries - attempt} left)...")
@@ -108,7 +104,9 @@ def _create_agent_instance(app_name: str, func_name: str, spec: FunctionSpec) ->
     except RuntimeError as e:
         fail(str(e))
         raise SystemExit(1) from e
-    instance_name = app_name.lower().replace("_", "-")
+    import uuid
+    suffix = uuid.uuid4().hex[:8]
+    instance_name = f"{app_name.lower().replace('_', '-')}-{suffix}"
     spec._app_name = app_name
 
     has_image = spec.image is not None

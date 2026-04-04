@@ -6,3 +6,4 @@ _reference/
 .env
 jobs/
 site/
+benchmarks/results/

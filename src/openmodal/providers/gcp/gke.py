@@ -202,11 +202,14 @@ class GKEProvider(CloudProvider):
             config.load_kube_config()
 
     def _auto_provision_cluster(self):
+        import logging as _logging
+
         from openmodal.cli.console import Spinner, success
         from openmodal.providers.gcp.gke_setup import setup_cluster
-
+        _logging.disable(_logging.INFO)
         with Spinner("Creating GKE cluster (one-time, ~5 min)...") as spinner:
             setup_cluster()
+        _logging.disable(_logging.NOTSET)
         success(f"GKE cluster ready. ({int(spinner.elapsed)}s)")
 
     def _delete_if_exists(self, delete_fn, read_fn, timeout: int = 30):
@@ -222,11 +225,25 @@ class GKEProvider(CloudProvider):
             except client.exceptions.ApiException:
                 return
 
+    def _ensure_default_agent_image(self, source_file: str | None = None) -> str:
+        import os
+
+        from openmodal.image import OPENMODAL_PIP_INSTALL, Image
+        img = Image.debian_slim()
+        img = img._append(OPENMODAL_PIP_INSTALL, "ENV PYTHONPATH=/opt")
+        if source_file and os.path.isfile(source_file):
+            filename = os.path.basename(source_file)
+            img = img._append(f"COPY {filename} /opt/{filename}")
+            img._context_files[filename] = source_file
+        img = img._append('CMD ["python", "-m", "openmodal.runtime.agent"]')
+        return img.build_and_push("default-agent", provider=self)
+
     def create_instance(
         self, spec: FunctionSpec, image_uri: str | None = None, name: str | None = None,
     ) -> tuple[str, str]:
         name = name or _k8s_name(getattr(spec, "_app_name", "app"))
-        image_uri = image_uri or ""
+        if image_uri is None:
+            image_uri = self._ensure_default_agent_image(spec.source_file)
 
         if spec.web_server_port:
             return self._create_deployment(spec, image_uri, name)
@@ -355,13 +372,6 @@ class GKEProvider(CloudProvider):
 
     def _create_pod(self, spec: FunctionSpec, image_uri: str, name: str) -> tuple[str, str]:
         pod = _build_pod_spec(spec, image_uri, name)
-
-        try:
-            self._v1.delete_namespaced_pod(name, NAMESPACE, grace_period_seconds=0)
-            time.sleep(2)
-        except client.exceptions.ApiException:
-            pass
-
         self._v1.create_namespaced_pod(NAMESPACE, pod)
         timeout = 1200 if spec.gpu else 600
         self._wait_for_pod_running(name, timeout=timeout)
@@ -529,12 +539,6 @@ class GKEProvider(CloudProvider):
         gpu: str | None = None, cpu: float | None = None, memory: int | None = None,
         env_vars: dict[str, str] | None = None,
     ):
-        try:
-            self._v1.delete_namespaced_pod(name, NAMESPACE, grace_period_seconds=0)
-            time.sleep(2)
-        except client.exceptions.ApiException:
-            pass
-
         image = image_uri or "ubuntu:24.04"
 
         resources = client.V1ResourceRequirements(requests={}, limits={})

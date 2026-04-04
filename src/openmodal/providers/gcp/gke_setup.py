@@ -35,7 +35,7 @@ def setup_cluster(gpu_types: list[str] | None = None, region: str = DEFAULT_REGI
     _run([
         "gcloud", "container", "clusters", "create", CLUSTER_NAME,
         f"--region={region}",
-        "--machine-type=e2-standard-4",
+        "--machine-type=e2-small",
         "--num-nodes=1",
         "--enable-autoscaling", "--min-nodes=0", "--max-nodes=1",
         "--scopes=storage-full",
@@ -67,7 +67,7 @@ def setup_cluster(gpu_types: list[str] | None = None, region: str = DEFAULT_REGI
         "gcloud", "container", "node-pools", "create", "sandbox-pool",
         f"--cluster={CLUSTER_NAME}",
         f"--region={region}",
-        "--machine-type=e2-standard-4",
+        "--machine-type=e2-small",
         "--num-nodes=0",
         "--enable-autoscaling", "--min-nodes=0", "--max-nodes=10",
         "--disk-size=100GB",

@@ -51,7 +51,7 @@ def setup_cluster(region: str | None = None):
         "eksctl", "create", "cluster",
         "--name", CLUSTER_NAME,
         "--region", region,
-        "--node-type", "t3.medium",
+        "--node-type", "t3.small",
         "--nodes", "1",
         "--nodes-min", "0",
         "--nodes-max", "2",

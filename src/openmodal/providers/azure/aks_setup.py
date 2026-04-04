@@ -93,7 +93,15 @@ def setup_cluster(location: str = DEFAULT_LOCATION):
         "--generate-ssh-keys",
     ])
 
-    # 4. Get credentials
+    # 4. Enable Node Auto-Provisioning
+    _run([
+        "az", "aks", "update",
+        "--name", CLUSTER_NAME,
+        "--resource-group", RESOURCE_GROUP,
+        "--enable-node-autoprovisioning",
+    ], check=False)
+
+    # 5. Get credentials
     update_kubeconfig()
 
     # 5. Install NVIDIA device plugin

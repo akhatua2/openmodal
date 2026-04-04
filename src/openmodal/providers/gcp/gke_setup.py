@@ -43,6 +43,16 @@ def setup_cluster(gpu_types: list[str] | None = None, region: str = DEFAULT_REGI
         f"--project={project}",
     ])
 
+    # Enable Node Auto-Provisioning so the cluster can create node pools
+    # on the fly when pods request more CPU/memory than existing pools support.
+    _run([
+        "gcloud", "container", "clusters", "update", CLUSTER_NAME,
+        f"--region={region}", f"--project={project}",
+        "--enable-autoprovisioning",
+        "--min-cpu=1", "--max-cpu=100",
+        "--min-memory=1", "--max-memory=400",
+    ])
+
     _run([
         "gcloud", "container", "clusters", "get-credentials", CLUSTER_NAME,
         f"--region={region}", f"--project={project}",

@@ -55,6 +55,11 @@ def _build_pod_spec(
             key="nvidia.com/gpu", operator="Exists", effect="NoSchedule",
         ))
 
+    if spec.cpu:
+        resources.requests["cpu"] = str(spec.cpu)
+    if spec.memory:
+        resources.requests["memory"] = f"{spec.memory}Mi"
+
     env_vars = []
     if spec.gpu:
         env_vars.append(client.V1EnvVar(

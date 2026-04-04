@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.11 (2026-04-04)
+
+### Added
+- **`cpu=` and `memory=` params on `@app.function()`** — request custom CPU/memory for remote functions (closes #4)
+- **GCP Node Auto-Provisioning (NAP)** — cluster auto-creates node pools for any CPU/memory request
+- **Azure Node Auto-Provisioning** — same as GCP, cluster creates right-sized nodes on the fly
+
 ## 0.3.10 (2026-04-04)
 
 ### Changed

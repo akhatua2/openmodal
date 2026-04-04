@@ -16,6 +16,8 @@ class FunctionSpec:
     name: str
     image: Any = None
     gpu: str = ""
+    cpu: float | None = None
+    memory: int | None = None
     scaledown_window: int = 300
     timeout: int = 600
     secrets: list[Any] = field(default_factory=list)

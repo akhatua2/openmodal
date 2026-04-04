@@ -5,6 +5,8 @@ repo_name: akhatua2/openmodal
 
 theme:
   name: material
+  logo: icon.png
+  favicon: favicon.png
   palette:
     - scheme: slate
       primary: black

@@ -560,8 +560,8 @@ class AKSProvider(CloudProvider):
     # ── Images ────────────────────────────────────────────────────────
 
     def build_image(self, dockerfile_dir: str, name: str, tag: str) -> str:
-        from openmodal.providers.azure.acr import docker_login, ensure_registry, get_registry_url
-        from openmodal.providers.azure.build import build_and_push
+        from openmodal.providers.azure.acr import ensure_registry, get_registry_url
+        from openmodal.providers.azure.build import acr_build
 
         subscription_id = get_subscription_id()
         acr_name = get_acr_name(subscription_id)
@@ -571,8 +571,7 @@ class AKSProvider(CloudProvider):
             return image_uri
 
         ensure_registry(acr_name, RESOURCE_GROUP, DEFAULT_LOCATION)
-        docker_login(acr_name)
-        build_and_push(dockerfile_dir, image_uri)
+        acr_build(dockerfile_dir, image_uri, acr_name)
         return image_uri
 
     def image_exists(self, image_uri: str) -> bool:

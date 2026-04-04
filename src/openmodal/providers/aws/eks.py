@@ -578,8 +578,8 @@ class EKSProvider(CloudProvider):
     # ── Images ────────────────────────────────────────────────────────
 
     def build_image(self, dockerfile_dir: str, name: str, tag: str) -> str:
-        from openmodal.providers.aws.build import codebuild
-        from openmodal.providers.aws.ecr import ensure_repository, get_registry_url
+        from openmodal.providers.aws.build import build_and_push
+        from openmodal.providers.aws.ecr import docker_login, ensure_repository, get_registry_url
 
         account_id = get_account_id()
         region = get_region()
@@ -589,7 +589,8 @@ class EKSProvider(CloudProvider):
             return image_uri
 
         ensure_repository(account_id, region, name)
-        codebuild(dockerfile_dir, image_uri, account_id, region)
+        docker_login(account_id, region)
+        build_and_push(dockerfile_dir, image_uri)
         return image_uri
 
     def image_exists(self, image_uri: str) -> bool:

@@ -3,9 +3,8 @@
 ## 0.3.10 (2026-04-04)
 
 ### Changed
-- **AWS image builds now use CodeBuild** — remote builds, no local Docker needed. Creates a reusable CodeBuild project with S3 context upload.
-- **Azure image builds now use ACR Tasks** — `az acr build` replaces local `docker build` + push
-- Docker is no longer required on the client machine for AWS or Azure (same as GCP)
+- **Azure image builds now use ACR Tasks** — `az acr build` replaces local `docker build` + push. No local Docker needed (same as GCP).
+- Architecture docs page with Mermaid diagrams
 
 ## 0.3.9 (2026-04-04)
 

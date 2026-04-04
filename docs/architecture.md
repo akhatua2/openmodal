@@ -72,11 +72,11 @@ sequenceDiagram
 | Provider | Registry | Build method |
 |---|---|---|
 | GCP | Artifact Registry | Cloud Build (remote) |
-| AWS | ECR | CodeBuild (remote) |
+| AWS | ECR | Local `docker build` + push |
 | Azure | ACR | ACR Tasks (remote) |
 | Local | None | Local `docker build` |
 
-No local Docker daemon needed on GCP, AWS, or Azure — images are built in the cloud.
+GCP and Azure build images remotely — no local Docker needed. AWS uses local Docker because CodeBuild requires admin IAM permissions.
 
 **2. Pod creation.** OpenModal creates a Kubernetes pod spec with your image, resource requests, GPU requirements, env vars, and volumes, then submits it to the K8s API.
 

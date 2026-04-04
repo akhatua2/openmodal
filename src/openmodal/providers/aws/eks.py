@@ -480,10 +480,8 @@ class EKSProvider(CloudProvider):
             tolerations.append(client.V1Toleration(
                 key="nvidia.com/gpu", operator="Exists", effect="NoSchedule",
             ))
-        if cpu:
-            resources.requests["cpu"] = str(cpu)
-        if memory:
-            resources.requests["memory"] = f"{memory}Mi"
+        resources.requests["cpu"] = str(cpu or 1)
+        resources.requests["memory"] = f"{memory or 1024}Mi"
 
         env_list = [client.V1EnvVar(name=k, value=v) for k, v in (env_vars or {}).items()]
 

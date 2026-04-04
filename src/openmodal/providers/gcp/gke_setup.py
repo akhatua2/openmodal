@@ -69,7 +69,7 @@ def setup_cluster(gpu_types: list[str] | None = None, region: str = DEFAULT_REGI
         f"--region={region}",
         "--machine-type=e2-small",
         "--num-nodes=0",
-        "--enable-autoscaling", "--min-nodes=0", "--max-nodes=10",
+        "--enable-autoscaling", "--min-nodes=0", "--max-nodes=100",
         "--disk-size=100GB",
         f"--project={project}",
     ])

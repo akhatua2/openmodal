@@ -155,6 +155,10 @@ class GKEProvider(CloudProvider):
         import subprocess
         if not shutil.which("gcloud"):
             raise RuntimeError("gcloud CLI not found. Run 'openmodal setup gcp' to get started.")
+        if not shutil.which("gke-gcloud-auth-plugin"):
+            raise RuntimeError(
+                "gke-gcloud-auth-plugin not found. Install: gcloud components install gke-gcloud-auth-plugin"
+            )
         result = subprocess.run(
             ["gcloud", "config", "get-value", "project"],
             capture_output=True, text=True,
@@ -553,10 +557,8 @@ class GKEProvider(CloudProvider):
             tolerations.append(client.V1Toleration(
                 key="nvidia.com/gpu", operator="Exists", effect="NoSchedule",
             ))
-        if cpu:
-            resources.requests["cpu"] = str(cpu)
-        if memory:
-            resources.requests["memory"] = f"{memory}Mi"
+        resources.requests["cpu"] = str(cpu or 1)
+        resources.requests["memory"] = f"{memory or 1024}Mi"
 
         env_list = [client.V1EnvVar(name=k, value=v) for k, v in (env_vars or {}).items()]
 

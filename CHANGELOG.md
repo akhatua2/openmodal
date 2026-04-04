@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.9 (2026-04-04)
+
+### Changed
+- Default sandbox resource requests: 1 CPU, 1 GB RAM on all K8s providers — fixes cluster autoscaler not scaling up
+- Sandbox node pool max nodes: 10 → 100
+- `openmodal setup gcp` auto-installs `kubectl` and `gke-gcloud-auth-plugin` if missing
+
+### Fixed
+- GKE preflight now checks for `gke-gcloud-auth-plugin` with a clear error message
+
 ## 0.3.8 (2026-04-04)
 
 ### Added

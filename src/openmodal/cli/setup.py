@@ -78,6 +78,33 @@ def gcp():
 
     if not _need("gcloud", "https://cloud.google.com/sdk/docs/install"):
         return
+    if not _has("kubectl"):
+        step_fail("kubectl is not installed")
+        if confirm("Install kubectl via gcloud?"):
+            _run(["gcloud", "components", "install", "kubectl", "--quiet"])
+            if _has("kubectl"):
+                step_ok("kubectl installed")
+            else:
+                step_fail("Install failed — try manually: https://kubernetes.io/docs/tasks/tools/")
+                return
+        else:
+            return
+    else:
+        step_ok("kubectl is installed")
+
+    if not _has("gke-gcloud-auth-plugin"):
+        step_fail("gke-gcloud-auth-plugin is not installed")
+        if confirm("Install it via gcloud?"):
+            _run(["gcloud", "components", "install", "gke-gcloud-auth-plugin", "--quiet"])
+            if _has("gke-gcloud-auth-plugin"):
+                step_ok("gke-gcloud-auth-plugin installed")
+            else:
+                step_fail("Install failed — try manually: gcloud components install gke-gcloud-auth-plugin")
+                return
+        else:
+            return
+    else:
+        step_ok("gke-gcloud-auth-plugin is installed")
 
     # Auth
     result = _run(["gcloud", "auth", "list", "--filter=status:ACTIVE", "--format=value(account)"])

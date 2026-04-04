@@ -17,14 +17,19 @@ results = train.map(configs)
 ## What works
 
 - `f.local()`, `f.remote()`, `f.map()`
-- GPU serving with auto scale-to-zero
+- GPU serving with auto scale-to-zero (KEDA)
 - Custom images, secrets, retries, volumes
-- Sandboxes for SWE agents
+- Sandboxes for SWE agents (parallel creation, exec, file transfer)
 - Local Docker provider — no cloud account needed
 - GCP provider with spot GPUs (H100, A100, L4)
 - AWS provider with EKS, Karpenter, KEDA
 - Azure provider with AKS, ACR, KEDA
-- CLI: `openmodal run`, `deploy`, `stop`, `ps`
+- CLI: `openmodal run`, `deploy`, `stop`, `ps`, `logs`, `monitor`, `secret`, `setup`
+- `openmodal monitor` — live GPU/CPU/memory dashboard
+- `openmodal secret` — manage named secrets locally
+- Benchmark suite for sandbox performance testing
+- [CooperBench](examples/cooperbench.md) integration — one-line import swap (`import openmodal as modal`)
+- [Harbor](examples/harbor.md) integration for SWE-bench evaluations
 
 ## Quick start
 
@@ -41,17 +46,17 @@ results = train.map(configs)
 
     ```bash
     pip install openmodal
-    gcloud auth login
+    openmodal setup gcp
     openmodal run examples/hello_world.py
     ```
 
-    See the [setup guide](setup.md) for GCP prerequisites.
+    The setup wizard handles authentication, API enablement, and tool installation.
 
 === "AWS"
 
     ```bash
     pip install "openmodal[aws]"
-    aws login
+    openmodal setup aws
     openmodal --aws run examples/hello_world.py
     ```
 
@@ -61,7 +66,7 @@ results = train.map(configs)
 
     ```bash
     pip install openmodal
-    az login
+    openmodal setup azure
     openmodal --azure run examples/hello_world.py
     ```
 

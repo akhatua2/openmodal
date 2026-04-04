@@ -3,24 +3,22 @@
 ## What works today
 
 - `f.local()`, `f.remote()`, `f.map()`
-- GPU serving with `@web_server` and auto scale-to-zero
+- GPU serving with `@web_server` and auto scale-to-zero (KEDA)
 - Sandboxes with parallel creation, exec, file transfer
-- Harbor / SWE-bench integration
+- Custom images, secrets, retries, volumes
 - Local Docker provider (CPU and GPU)
-- GCP provider with spot GPUs (H100, A100, L4)
-- AWS provider with EKS, Karpenter, KEDA, ECR, S3
-- Azure provider with AKS, ACR, KEDA, Azure Blob Storage CSI
+- GCP provider with spot GPUs (H100, A100, L4) and cluster autoscaling
+- AWS provider with EKS, Karpenter, KEDA, ECR
+- Azure provider with AKS, ACR, KEDA
+- `openmodal monitor` — live GPU/CPU/memory dashboard
+- `openmodal secret` — local secret management
+- `openmodal setup` — interactive setup wizard with auto-install
+- Benchmark suite for sandbox performance testing
+- CooperBench integration (one-line import swap)
+- Harbor / SWE-bench integration
 - Published on [PyPI](https://pypi.org/project/openmodal/) with auto-publish on version bump
 
 ## What's next
-
-### Scale-from-zero
-
-When a request arrives and no containers are running, automatically spin one up. Currently requires a redeploy.
-
-### Horizontal auto-scaling
-
-Currently each deployment runs 1 replica. Need KEDA or a CronJob-based approach to scale replicas based on request queue depth.
 
 ### Stateful GPU classes (`@app.cls`)
 
@@ -38,6 +36,10 @@ Class-based functions where the class is instantiated once per container and met
 
 `@app.function(schedule=modal.Cron("0 9 * * *"))` for recurring tasks.
 
+### SLURM provider
+
+Run on university HPC clusters via SLURM + Singularity. No sudo or Kubernetes needed — just SSH + `sbatch`.
+
 ### Multi-region
 
-Currently hardcoded to `us-central1`. Should auto-detect the best region based on GPU availability.
+Currently hardcoded to `us-central1` (GCP) / `us-east-1` (AWS). Should auto-detect the best region based on GPU availability.

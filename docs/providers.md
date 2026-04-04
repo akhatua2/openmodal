@@ -49,7 +49,7 @@ openmodal --aws run examples/hello_world.py
 | `f.remote()` | EKS pod with your function |
 | Sandboxes | EKS pod + `kubectl exec` |
 | GPU | Karpenter provisions spot GPU nodes (p5, g5, g6) |
-| Volumes | S3 + Mountpoint CSI driver |
+| Volumes | Init container sync (S3) |
 | Image build | Local `docker build` + ECR push |
 | Scale-to-zero | KEDA ScaledObject |
 | Scaling | Karpenter auto-provisioning |
@@ -68,8 +68,8 @@ openmodal --azure run examples/hello_world.py
 |---|---|
 | `f.remote()` | AKS pod with your function |
 | Sandboxes | AKS pod + `kubectl exec` |
-| GPU | NC/ND-series VMs (not yet tested) |
-| Volumes | Azure Blob Storage CSI driver |
+| GPU | NC/ND-series VMs |
+| Volumes | Init container sync (Azure Blob Storage) |
 | Image build | Local `docker build` + ACR push |
 | Scale-to-zero | KEDA (native AKS addon) |
 | Scaling | AKS node autoprovisioning |

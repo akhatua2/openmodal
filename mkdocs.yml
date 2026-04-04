@@ -19,22 +19,30 @@ theme:
   features:
     - navigation.instant
     - navigation.sections
-    - navigation.expand
+    - navigation.tabs
+    - navigation.top
+    - navigation.path
     - content.code.copy
+    - toc.integrate
 
 nav:
   - Home: index.md
-  - Setup: setup.md
+  - Getting Started:
+    - Setup: setup.md
+    - Providers: providers.md
   - Examples:
     - Overview: examples/index.md
-    - Hello World: examples/hello_world.md
-    - Web Scraper: examples/web_scraper.md
-    - vLLM Serving: examples/vllm_serving.md
-    - Sandboxes: examples/sandbox.md
-    - SFT Finetuning: examples/sft_finetune.md
-    - CooperBench: examples/cooperbench.md
-    - SWE-bench with Harbor: examples/harbor.md
-  - Providers: providers.md
+    - Getting Started:
+      - Hello World: examples/hello_world.md
+      - Web Scraper: examples/web_scraper.md
+    - GPU:
+      - vLLM Serving: examples/vllm_serving.md
+      - SFT Finetuning: examples/sft_finetune.md
+    - Sandboxes:
+      - Sandboxes: examples/sandbox.md
+    - Benchmarks:
+      - CooperBench: examples/cooperbench.md
+      - SWE-bench with Harbor: examples/harbor.md
   - Roadmap: roadmap.md
 
 markdown_extensions:
@@ -45,3 +53,6 @@ markdown_extensions:
       alternate_style: true
   - admonition
   - tables
+  - toc:
+      permalink: true
+      toc_depth: 3

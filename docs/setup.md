@@ -8,7 +8,7 @@ pip install openmodal
 
 ## Interactive setup
 
-The fastest way to get started is the setup wizard. It checks your prerequisites, walks you through authentication, and configures everything:
+The fastest way to get started. The wizard checks prerequisites, auto-installs missing tools, walks you through authentication, and configures everything:
 
 ```bash
 openmodal setup
@@ -44,20 +44,30 @@ For cloud GPUs, spot instances, and auto scale-to-zero, you'll need a GCP projec
 - GCP account with a project
 - `gcloud` CLI installed
 
-### Authenticate
+### Setup
+
+```bash
+openmodal setup gcp
+```
+
+The wizard will:
+
+- Check for `gcloud`, `kubectl`, and `gke-gcloud-auth-plugin`
+- Auto-install `kubectl` and `gke-gcloud-auth-plugin` via gcloud if missing
+- Check authentication (prompts you to run `gcloud auth login` if needed)
+- Let you select a GCP project
+- Enable required APIs (Compute Engine, Kubernetes Engine, Cloud Build, Artifact Registry)
+
+### Manual setup
+
+If you prefer to set things up manually:
 
 ```bash
 gcloud auth login
 gcloud config set project YOUR_PROJECT_ID
-```
-
-### Enable APIs
-
-```bash
-gcloud services enable compute.googleapis.com
-gcloud services enable container.googleapis.com
-gcloud services enable cloudbuild.googleapis.com
-gcloud services enable artifactregistry.googleapis.com
+gcloud services enable compute.googleapis.com container.googleapis.com \
+  cloudbuild.googleapis.com artifactregistry.googleapis.com
+gcloud components install kubectl gke-gcloud-auth-plugin
 ```
 
 ### Verify
@@ -66,7 +76,7 @@ gcloud services enable artifactregistry.googleapis.com
 openmodal run examples/hello_world.py
 ```
 
-OpenModal uses GKE for all workloads. The cluster is created automatically on first run.
+OpenModal uses GKE for all workloads. The cluster is created automatically on first run (~5 min one-time setup).
 
 ## AWS
 
@@ -78,15 +88,10 @@ OpenModal uses GKE for all workloads. The cluster is created automatically on fi
 - `helm` installed (for Karpenter and KEDA)
 - Docker installed (for image building)
 
-### Authenticate
+### Setup
 
 ```bash
-aws login
-```
-
-### Install AWS extras
-
-```bash
+openmodal setup aws
 pip install "openmodal[aws]"
 ```
 
@@ -106,10 +111,10 @@ On first run, OpenModal creates an EKS cluster (~15 min one-time setup). After t
 - `az` CLI installed and authenticated
 - Docker installed (for image building)
 
-### Authenticate
+### Setup
 
 ```bash
-az login
+openmodal setup azure
 ```
 
 ### Verify

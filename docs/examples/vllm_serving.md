@@ -10,7 +10,7 @@ import openmodal
 MODEL_NAME = "Qwen/Qwen3.5-0.8B"
 
 vllm_image = (
-    openmodal.Image.from_registry("nvidia/cuda:12.8.0-devel-ubuntu22.04", add_python="3.12")
+    openmodal.Image.from_registry("nvidia/cuda:12.8.1-devel-ubuntu24.04", add_python="3.12")
     .entrypoint([])
     .apt_install("git")
     .uv_pip_install("vllm", "huggingface-hub==0.36.0",

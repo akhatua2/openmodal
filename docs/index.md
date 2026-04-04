@@ -1,4 +1,6 @@
-# OpenModal
+<p align="center">
+  <img src="openmodal.png" alt="OpenModal" width="600">
+</p>
 
 An open-source runtime that implements [Modal](https://modal.com)'s Python interface. Write the same code, run it on your own infrastructure.
 

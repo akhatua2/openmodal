@@ -1,4 +1,6 @@
-# OpenModal
+<p align="center">
+  <img src="docs/openmodal.png" alt="OpenModal" width="600">
+</p>
 
 [![PyPI](https://img.shields.io/pypi/v/openmodal)](https://pypi.org/project/openmodal/)
 

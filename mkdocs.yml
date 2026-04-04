@@ -5,7 +5,7 @@ repo_name: akhatua2/openmodal
 
 theme:
   name: material
-  logo: icon.png
+  logo: openmodal.png
   favicon: favicon.png
   palette:
     - scheme: slate
@@ -46,6 +46,9 @@ nav:
       - CooperBench: examples/cooperbench.md
       - SWE-bench with Harbor: examples/harbor.md
   - Roadmap: roadmap.md
+
+extra_css:
+  - stylesheets/extra.css
 
 markdown_extensions:
   - pymdownx.highlight:

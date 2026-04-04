@@ -25,4 +25,5 @@ For hundreds of additional examples, see the [Modal examples gallery](https://mo
 
 ## Benchmarks
 
+- [CooperBench](cooperbench.md) — run multi-agent coding benchmarks with OpenModal (one-line import swap)
 - [SWE-bench with Harbor](harbor.md) — run SWE-bench evaluations with OpenModal as compute backend

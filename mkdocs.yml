@@ -32,6 +32,7 @@ nav:
     - vLLM Serving: examples/vllm_serving.md
     - Sandboxes: examples/sandbox.md
     - SFT Finetuning: examples/sft_finetune.md
+    - CooperBench: examples/cooperbench.md
     - SWE-bench with Harbor: examples/harbor.md
   - Providers: providers.md
   - Roadmap: roadmap.md

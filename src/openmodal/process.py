@@ -21,11 +21,11 @@ class ContainerProcess:
     def __init__(self, stdout_data: str, stderr_data: str, returncode: int):
         self.stdout = _StreamReader(stdout_data)
         self.stderr = _StreamReader(stderr_data)
-        self._returncode = returncode
+        self.returncode = returncode
         self.wait = self._make_wait()
 
     def _make_wait(self):
         def wait():
-            return self._returncode
+            return self.returncode
         wait.aio = _AioWrapper(wait)
         return wait

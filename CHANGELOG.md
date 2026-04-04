@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.8 (2026-04-04)
+
+### Added
+- **CooperBench integration** — run multi-agent coding benchmarks on OpenModal with a one-line import swap (`import openmodal as modal`)
+- CooperBench example and docs page
+
+### Fixed
+- `ContainerProcess.returncode` is now a public attribute (was `_returncode`), matching Modal's API
+
 ## 0.3.7 (2026-04-04)
 
 ### Added

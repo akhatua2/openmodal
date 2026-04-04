@@ -1,45 +1,119 @@
 # Roadmap
 
-## What works today
+## Modal API compatibility
 
-- `f.local()`, `f.remote()`, `f.map()`
-- GPU serving with `@web_server` and auto scale-to-zero (KEDA)
-- Sandboxes with parallel creation, exec, file transfer
-- Custom images, secrets, retries, volumes
-- Local Docker provider (CPU and GPU)
-- GCP provider with spot GPUs (H100, A100, L4) and cluster autoscaling
-- AWS provider with EKS, Karpenter, KEDA, ECR
-- Azure provider with AKS, ACR, KEDA
-- `openmodal monitor` — live GPU/CPU/memory dashboard
-- `openmodal secret` — local secret management
-- `openmodal setup` — interactive setup wizard with auto-install
-- Benchmark suite for sandbox performance testing
-- CooperBench integration (one-line import swap)
-- Harbor / SWE-bench integration
-- Published on [PyPI](https://pypi.org/project/openmodal/) with auto-publish on version bump
+How OpenModal compares to the [Modal Python API](https://modal.com/docs/reference).
 
-## What's next
+### Supported
 
-### Stateful GPU classes (`@app.cls`)
+| Feature | Modal | OpenModal |
+|---|:---:|:---:|
+| **Application construction** | | |
+| `App` | ✓ | ✓ |
+| `@app.function()` | ✓ | ✓ |
+| `@app.local_entrypoint()` | ✓ | ✓ |
+| **Serverless execution** | | |
+| `Function.remote()` | ✓ | ✓ |
+| `Function.local()` | ✓ | ✓ |
+| `Function.map()` | ✓ | ✓ |
+| **Web integrations** | | |
+| `@web_server(port)` | ✓ | ✓ |
+| **Function semantics** | | |
+| `@modal.concurrent` | ✓ | ✓ |
+| **Exception handling** | | |
+| `retries=N` | ✓ | ✓ |
+| **Sandboxes** | | |
+| `Sandbox.create()` | ✓ | ✓ |
+| `Sandbox.exec()` | ✓ | ✓ |
+| `Sandbox.filesystem` | ✓ | ✓ |
+| `ContainerProcess` | ✓ | ✓ |
+| **Container configuration** | | |
+| `Image.debian_slim()` | ✓ | ✓ |
+| `Image.from_registry()` | ✓ | ✓ |
+| `Image.from_dockerfile()` | ✓ | ✓ |
+| `.pip_install()` | ✓ | ✓ |
+| `.uv_pip_install()` | ✓ | ✓ |
+| `.apt_install()` | ✓ | ✓ |
+| `.run_commands()` | ✓ | ✓ |
+| `.env()` | ✓ | ✓ |
+| `.workdir()` | ✓ | ✓ |
+| `.entrypoint()` | ✓ | ✓ |
+| `Secret.from_name()` | ✓ | ✓ |
+| `Secret.from_dict()` | ✓ | ✓ |
+| **Resource configuration** | | |
+| `gpu=` | ✓ | ✓ |
+| `cpu=` | ✓ | ✓ |
+| `memory=` | ✓ | ✓ |
+| `timeout=` | ✓ | ✓ |
+| `scaledown_window=` | ✓ | ✓ |
+| **Persistent storage** | | |
+| `Volume` | ✓ | ✓ |
+| **CLI** | | |
+| `run` | ✓ | ✓ |
+| `deploy` | ✓ | ✓ |
+| `stop` | ✓ | ✓ |
+| `secret create/list/delete` | ✓ | ✓ |
+| `ps` / `logs` | ✗ | ✓ |
+| `monitor` | ✗ | ✓ |
+| `setup` | ✗ | ✓ |
 
-Class-based functions where the class is instantiated once per container and methods are called per request. Important for GPU inference where model loading is expensive.
+### Not yet supported
 
-### Container lifecycle hooks
+| Feature | Status |
+|---|---|
+| **High priority** | |
+| `@app.cls()` / `Cls` / `@modal.method` | Planned |
+| `@modal.enter` / `@modal.exit` | Planned |
+| `@modal.batched` | Planned |
+| `@modal.fastapi_endpoint` | Planned |
+| `@modal.asgi_app` | Planned |
+| `modal.Cron` / `modal.Period` | Planned |
+| **Medium priority** | |
+| `Function.spawn()` | Planned |
+| `Function.starmap()` / `.for_each()` | Planned |
+| `@modal.wsgi_app` | Planned |
+| `modal.Retries(backoff=)` | Planned |
+| `modal.Dict` / `modal.Queue` | Planned |
+| `CloudBucketMount` | Planned |
+| `.add_local_file()` / `.add_local_dir()` | Planned |
+| `.add_local_python_source()` | Planned |
+| `.run_function()` | Planned |
+| `.pip_install_from_requirements()` / `.pip_install_from_pyproject()` | Planned |
+| `modal.parameter()` / `Cls.with_options()` | Planned |
+| `serve` (hot-reload) | Planned |
+| `shell` | Planned |
+| `volume ls/put/get/rm` | Planned |
+| Multi-region | Planned |
+| **Lower priority** | |
+| `@app.include()` | |
+| `Image.from_scratch()` / `Image.micromamba()` | |
+| `Secret.from_dotenv()` | |
+| `ephemeral_disk=` | |
+| GPU fallback lists | |
+| Memory snapshots | |
+| `FileIO` | |
+| `snapshot_filesystem()` | |
+| Port tunnels | |
+| `modal.Proxy` / `modal.forward()` | |
+| Rolling / recreate strategies | |
+| Environments (dev/staging/prod) | |
+| `container exec` | |
+| `NetworkFileSystem` | Deprecated in Modal |
 
-`@build`, `@enter`, `@exit` decorators for running code at container build time, startup, and shutdown.
+## OpenModal-only features
 
-### FastAPI / ASGI endpoints
+Things we support that Modal doesn't:
 
-`@modal.asgi_app` and `@modal.web_endpoint` for serving FastAPI, Flask, etc. Currently only `@web_server` (subprocess-based) is supported.
+- **Multi-cloud** — GCP, AWS, Azure, and local Docker from one API
+- **Self-hosted** — runs on your own infrastructure, no vendor lock-in
+- **Local Docker mode** — free local testing with GPU passthrough (`--local`)
+- **Live terminal dashboard** — `openmodal monitor` with real-time GPU/CPU/memory sparklines
+- **Historical metrics** — persisted metrics with circular buffer
+- **Interactive setup wizard** — `openmodal setup` for each cloud provider
+- **Harbor / CooperBench integration** — experiment tracking compatibility
 
-### Scheduled functions
-
-`@app.function(schedule=modal.Cron("0 9 * * *"))` for recurring tasks.
+## Infra roadmap
 
 ### SLURM provider
 
 Run on university HPC clusters via SLURM + Singularity. No sudo or Kubernetes needed — just SSH + `sbatch`.
-
-### Multi-region
-
-Currently hardcoded to `us-central1` (GCP) / `us-east-1` (AWS). Should auto-detect the best region based on GPU availability.

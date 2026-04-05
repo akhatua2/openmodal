@@ -36,7 +36,8 @@ def load_app(app_path: str) -> App:
 @click.option("--gcp", is_flag=True, help="Run on GCP GKE (default).")
 @click.option("--aws", is_flag=True, help="Run on AWS EKS.")
 @click.option("--azure", is_flag=True, help="Run on Azure AKS.")
-def cli(verbose: bool, local: bool, gcp: bool, aws: bool, azure: bool):
+@click.option("--cluster", is_flag=True, help="Run on an SSH cluster (no Docker).")
+def cli(verbose: bool, local: bool, gcp: bool, aws: bool, azure: bool, cluster: bool):
     import os
     logging.basicConfig(
         level=logging.DEBUG if verbose else logging.INFO,
@@ -44,6 +45,8 @@ def cli(verbose: bool, local: bool, gcp: bool, aws: bool, azure: bool):
     )
     if local:
         os.environ["OPENMODAL_PROVIDER"] = "local"
+    elif cluster:
+        os.environ["OPENMODAL_PROVIDER"] = "cluster"
     elif aws:
         os.environ["OPENMODAL_PROVIDER"] = "aws"
     elif azure:

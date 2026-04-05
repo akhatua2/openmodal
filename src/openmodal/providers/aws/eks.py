@@ -403,6 +403,74 @@ class EKSProvider(CloudProvider):
         except Exception:
             return "Could not determine reason. Run 'kubectl describe pod' for details."
 
+    def create_cron_job(self, spec: FunctionSpec, image_uri: str, name: str) -> str:
+        from kubernetes.client import BatchV1Api
+        batch_v1 = BatchV1Api()
+
+        k8s_name = _k8s_name(name)
+        app_label = _k8s_name(spec._app_name) if spec._app_name else k8s_name
+        pod_template = _build_pod_spec(spec, image_uri, k8s_name)
+        pod_template.spec.restart_policy = "Never"
+
+        cronjob = client.V1CronJob(
+            metadata=client.V1ObjectMeta(
+                name=k8s_name,
+                labels={
+                    "app": app_label,
+                    "managed-by": LABEL_MANAGED_BY,
+                    "openmodal-type": "cronjob",
+                },
+            ),
+            spec=client.V1CronJobSpec(
+                schedule=spec.schedule.to_k8s_schedule(),
+                concurrency_policy="Forbid",
+                successful_jobs_history_limit=3,
+                failed_jobs_history_limit=3,
+                job_template=client.V1JobTemplateSpec(
+                    spec=client.V1JobSpec(
+                        backoff_limit=spec.retries,
+                        active_deadline_seconds=spec.timeout,
+                        template=client.V1PodTemplateSpec(
+                            metadata=pod_template.metadata,
+                            spec=pod_template.spec,
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        with contextlib.suppress(client.exceptions.ApiException):
+            batch_v1.delete_namespaced_cron_job(k8s_name, NAMESPACE)
+
+        batch_v1.create_namespaced_cron_job(NAMESPACE, cronjob)
+        return k8s_name
+
+    def delete_cron_job(self, name: str) -> None:
+        from kubernetes.client import BatchV1Api
+        batch_v1 = BatchV1Api()
+        with contextlib.suppress(client.exceptions.ApiException):
+            batch_v1.delete_namespaced_cron_job(_k8s_name(name), NAMESPACE)
+
+    def list_cron_jobs(self, app_name: str | None = None) -> list[dict]:
+        from kubernetes.client import BatchV1Api
+        batch_v1 = BatchV1Api()
+
+        label_selector = f"managed-by={LABEL_MANAGED_BY},openmodal-type=cronjob"
+        if app_name:
+            label_selector += f",app={_k8s_name(app_name)}"
+
+        cronjobs = batch_v1.list_namespaced_cron_job(NAMESPACE, label_selector=label_selector)
+        results = []
+        for cj in cronjobs.items:
+            last_schedule = cj.status.last_schedule_time
+            results.append({
+                "name": cj.metadata.name,
+                "schedule": cj.spec.schedule,
+                "status": "Active" if not cj.spec.suspend else "Suspended",
+                "last_run": str(last_schedule) if last_schedule else "Never",
+            })
+        return results
+
     def delete_instance(self, instance_name: str) -> None:
         # Kill port-forward if running
         if hasattr(self, "_port_forward_proc") and self._port_forward_proc:

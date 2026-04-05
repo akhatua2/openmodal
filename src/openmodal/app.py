@@ -49,11 +49,18 @@ class App:
         secrets: list[Secret] | None = None,
         retries: int = 0,
         volumes: dict[str, Volume] | None = None,
+        schedule=None,
     ):
         def decorator(func: Callable) -> Callable:
             max_concurrent = getattr(func, "_openmodal_concurrent", 1)
             ws_port = getattr(func, "_openmodal_web_server_port", None)
             ws_timeout = getattr(func, "_openmodal_web_server_startup_timeout", timeout)
+
+            if schedule and ws_port:
+                raise ValueError(
+                    f"Function {func.__name__} cannot have both schedule= and @web_server. "
+                    "Scheduled functions run to completion; web servers run continuously."
+                )
 
             source_file = inspect.getfile(func)
             module_name = func.__module__
@@ -74,6 +81,7 @@ class App:
                 max_concurrent_inputs=max_concurrent,
                 web_server_port=ws_port,
                 web_server_startup_timeout=ws_timeout,
+                schedule=schedule,
                 source_file=source_file,
                 module_name=module_name,
                 qualname=qualname,

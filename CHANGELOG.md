@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.12 (2026-04-05)
+
+### Added
+- **Scheduled functions (`Cron`, `Period`)** — `@app.function(schedule=openmodal.Cron("* * * * *"))` creates a Kubernetes CronJob on deploy. Supports all providers (GCP, AWS, Azure, local Docker).
+- **`openmodal ps` shows cron jobs** — lists active CronJobs alongside running containers
+- **`openmodal stop` cleans up cron jobs** — deletes CronJobs when stopping an app
+- New example: `examples/uptime_monitor.py` — pings a URL every minute
+
 ## 0.3.11 (2026-04-04)
 
 ### Added

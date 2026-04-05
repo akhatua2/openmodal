@@ -9,7 +9,8 @@ from openmodal.app import App
 from openmodal.function import FunctionSpec
 from openmodal.image import Image
 from openmodal.sandbox import Sandbox
+from openmodal.schedule import Cron, Period
 from openmodal.secret import Secret
 from openmodal.volume import Volume
 
-__all__ = ["App", "FunctionSpec", "Image", "Sandbox", "Secret", "Volume", "concurrent", "web_server"]
+__all__ = ["App", "Cron", "FunctionSpec", "Image", "Period", "Sandbox", "Secret", "Volume", "concurrent", "web_server"]

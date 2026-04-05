@@ -20,6 +20,9 @@ How OpenModal compares to the [Modal Python API](https://modal.com/docs/referenc
 | `@web_server(port)` | ✓ | ✓ |
 | **Function semantics** | | |
 | `@modal.concurrent` | ✓ | ✓ |
+| **Scheduling** | | |
+| `modal.Cron` | ✓ | ✓ |
+| `modal.Period` | ✓ | ✓ |
 | **Exception handling** | | |
 | `retries=N` | ✓ | ✓ |
 | **Sandboxes** | | |
@@ -62,29 +65,27 @@ How OpenModal compares to the [Modal Python API](https://modal.com/docs/referenc
 | Feature | Status |
 |---|---|
 | **High priority** | |
-| `@app.cls()` / `Cls` / `@modal.method` | Planned |
-| `@modal.enter` / `@modal.exit` | Planned |
-| `@modal.batched` | Planned |
-| `@modal.fastapi_endpoint` | Planned |
-| `@modal.asgi_app` | Planned |
-| `modal.Cron` / `modal.Period` | Planned |
-| **Medium priority** | |
 | `Function.spawn()` | Planned |
-| `Function.starmap()` / `.for_each()` | Planned |
-| `@modal.wsgi_app` | Planned |
-| `modal.Retries(backoff=)` | Planned |
 | `modal.Dict` / `modal.Queue` | Planned |
+| **Medium priority** | |
+| `Function.starmap()` / `.for_each()` | Planned |
+| `modal.Retries(backoff=)` | Planned |
 | `CloudBucketMount` | Planned |
 | `.add_local_file()` / `.add_local_dir()` | Planned |
 | `.add_local_python_source()` | Planned |
 | `.run_function()` | Planned |
 | `.pip_install_from_requirements()` / `.pip_install_from_pyproject()` | Planned |
-| `modal.parameter()` / `Cls.with_options()` | Planned |
 | `serve` (hot-reload) | Planned |
 | `shell` | Planned |
 | `volume ls/put/get/rm` | Planned |
 | Multi-region | Planned |
 | **Lower priority** | |
+| `@app.cls()` / `Cls` / `@modal.method` | Planned — ergonomic, not blocking |
+| `@modal.enter` / `@modal.exit` | Planned — ergonomic, not blocking |
+| `@modal.batched` | Planned — ergonomic, not blocking |
+| `@modal.fastapi_endpoint` | Planned — ergonomic, not blocking |
+| `@modal.asgi_app` / `@modal.wsgi_app` | Planned — ergonomic, not blocking |
+| `modal.parameter()` / `Cls.with_options()` | Planned |
 | `@app.include()` | |
 | `Image.from_scratch()` / `Image.micromamba()` | |
 | `Secret.from_dotenv()` | |

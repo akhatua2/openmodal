@@ -88,6 +88,18 @@ class CloudProvider(abc.ABC):
         """Stream logs from an instance. Returns a Popen object or None."""
         raise NotImplementedError
 
+    def create_cron_job(self, spec: FunctionSpec, image_uri: str, name: str) -> str:
+        """Create a scheduled cron job. Returns the job name."""
+        raise NotImplementedError
+
+    def delete_cron_job(self, name: str) -> None:
+        """Delete a cron job by name."""
+        raise NotImplementedError
+
+    def list_cron_jobs(self, app_name: str | None = None) -> list[dict]:
+        """List cron jobs. Returns list of dicts with keys: name, schedule, status, last_run."""
+        raise NotImplementedError
+
     def ensure_volume(self, name: str) -> str:
         """Create a volume if needed and return its URI/path."""
         raise NotImplementedError

@@ -124,6 +124,75 @@ class LocalProvider(CloudProvider):
         subprocess.run(cmd, check=True, capture_output=True)
         return name, "localhost"
 
+    def create_cron_job(self, spec: FunctionSpec, image_uri: str, name: str) -> str:
+        name = name.lower().replace("_", "-")[:63]
+        self._rm(name)
+
+        interval = 60
+        if hasattr(spec.schedule, "total_seconds"):
+            interval = spec.schedule.total_seconds()
+        else:
+            # Parse simple cron intervals like "*/5 * * * *"
+            parts = spec.schedule.cron_string.split()
+            if len(parts) >= 1 and parts[0].startswith("*/"):
+                interval = int(parts[0][2:]) * 60
+
+        loop_cmd = (
+            f'while true; do '
+            f'python -m openmodal.runtime.cron_runner; '
+            f'sleep {interval}; '
+            f'done'
+        )
+
+        cmd = [
+            "docker", "run", "-d",
+            "--name", name,
+            "--label", LABEL,
+            "--label", "openmodal-type=cronjob",
+            "--network", "host",
+        ]
+
+        cmd += self._get_source_mounts()
+
+        if spec.gpu:
+            _check_gpu(spec.gpu)
+            cmd += ["--gpus", "all"]
+
+        for secret in (spec.secrets or []):
+            if hasattr(secret, "env_dict"):
+                for k, v in secret.env_dict.items():
+                    cmd += ["-e", f"{k}={v}"]
+
+        cmd += [image_uri, "bash", "-c", loop_cmd]
+        subprocess.run(cmd, check=True, capture_output=True)
+        return name
+
+    def delete_cron_job(self, name: str) -> None:
+        self._rm(name.lower().replace("_", "-")[:63])
+
+    def list_cron_jobs(self, app_name: str | None = None) -> list[dict]:
+        result = subprocess.run(
+            ["docker", "ps", "--filter", f"label={LABEL}",
+             "--filter", "label=openmodal-type=cronjob",
+             "--format", "{{json .}}"],
+            capture_output=True, text=True,
+        )
+        jobs = []
+        for line in result.stdout.strip().split("\n"):
+            if not line:
+                continue
+            data = json.loads(line)
+            name = data.get("Names", "")
+            if app_name and app_name.lower() not in name.lower():
+                continue
+            jobs.append({
+                "name": name,
+                "schedule": "loop",
+                "status": data.get("State", data.get("Status", "")),
+                "last_run": "",
+            })
+        return jobs
+
     def delete_instance(self, instance_name: str) -> None:
         self._rm(instance_name)
 

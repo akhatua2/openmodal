@@ -123,6 +123,21 @@ class Image:
         img._context_files[filename] = source_file
         return img
 
+    def with_cron_runner(self, source_file: str, function_name: str) -> Image:
+        """Extend this image to run a scheduled function as a cron job."""
+        filename = os.path.basename(source_file)
+        module_name = filename.removesuffix(".py")
+        img = self._append(
+            OPENMODAL_PIP_INSTALL,
+            f"COPY {filename} /opt/{filename}",
+            "ENV PYTHONPATH=/opt",
+            f"ENV OPENMODAL_MODULE={module_name}",
+            f"ENV OPENMODAL_FUNCTION={function_name}",
+            'CMD ["python", "-m", "openmodal.runtime.cron_runner"]',
+        )
+        img._context_files[filename] = source_file
+        return img
+
     def with_agent(self, port: int = 50051, source_file: str | None = None) -> Image:
         """Extend this image with the openmodal SDK, execution agent, and user source."""
         img = self._append(

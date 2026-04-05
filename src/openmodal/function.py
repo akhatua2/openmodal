@@ -27,6 +27,7 @@ class FunctionSpec:
     web_server_port: int | None = None
     web_server_startup_timeout: int = 600
     web_url: str | None = None
+    schedule: Any = None  # Cron | Period | None
     source_file: str | None = None
     module_name: str | None = None
     qualname: str | None = None

@@ -1,12 +1,13 @@
 [project]
 name = "openmodal"
-version = "0.3.12"
+version = "0.3.13"
 description = "Run Modal on your own cloud. Open-source, cloud-agnostic serverless GPU compute."
 requires-python = "==3.12.*"
 dependencies = [
     "click>=8.3",
     "kubernetes>=35.0",
     "google-auth>=2.49",
+    "redis>=5.0",
     "requests>=2.33",
     "rich>=13.0",
 ]

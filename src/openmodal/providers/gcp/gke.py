@@ -554,6 +554,76 @@ class GKEProvider(CloudProvider):
             })
         return results
 
+    def ensure_redis(self) -> str:
+        redis_name = "openmodal-redis"
+        # Check if already running
+        try:
+            pod = self._v1.read_namespaced_pod(redis_name, NAMESPACE)
+            if pod.status.phase == "Running":
+                return f"redis://{redis_name}.{NAMESPACE}.svc.cluster.local:6379"
+        except client.exceptions.ApiException:
+            pass
+
+        # Deploy Redis pod
+        pod = client.V1Pod(
+            metadata=client.V1ObjectMeta(
+                name=redis_name,
+                labels={"app": redis_name, "managed-by": LABEL_MANAGED_BY, "openmodal-type": "redis"},
+            ),
+            spec=client.V1PodSpec(
+                containers=[client.V1Container(
+                    name="redis",
+                    image="redis:7-alpine",
+                    ports=[client.V1ContainerPort(container_port=6379)],
+                    resources=client.V1ResourceRequirements(
+                        requests={"cpu": "0.1", "memory": "64Mi"},
+                        limits={"memory": "256Mi"},
+                    ),
+                    readiness_probe=client.V1Probe(
+                        tcp_socket=client.V1TCPSocketAction(port=6379),
+                        initial_delay_seconds=1,
+                        period_seconds=2,
+                    ),
+                )],
+                restart_policy="Always",
+            ),
+        )
+        self._v1.create_namespaced_pod(NAMESPACE, pod)
+
+        # ClusterIP service
+        svc = client.V1Service(
+            metadata=client.V1ObjectMeta(
+                name=redis_name,
+                labels={"app": redis_name, "managed-by": LABEL_MANAGED_BY, "openmodal-type": "redis"},
+            ),
+            spec=client.V1ServiceSpec(
+                type="ClusterIP",
+                selector={"app": redis_name},
+                ports=[client.V1ServicePort(port=6379, target_port=6379)],
+            ),
+        )
+        with contextlib.suppress(client.exceptions.ApiException):
+            self._v1.delete_namespaced_service(redis_name, NAMESPACE)
+        self._v1.create_namespaced_service(NAMESPACE, svc)
+
+        # Wait for running
+        for _ in range(60):
+            pod_status = self._v1.read_namespaced_pod(redis_name, NAMESPACE)
+            if pod_status.status.phase == "Running" and pod_status.status.pod_ip:
+                break
+            time.sleep(2)
+
+        return f"redis://{redis_name}.{NAMESPACE}.svc.cluster.local:6379"
+
+    def delete_redis(self) -> None:
+        redis_name = "openmodal-redis"
+        for fn in [
+            lambda: self._v1.delete_namespaced_pod(redis_name, NAMESPACE),
+            lambda: self._v1.delete_namespaced_service(redis_name, NAMESPACE),
+        ]:
+            with contextlib.suppress(client.exceptions.ApiException):
+                fn()
+
     def delete_instance(self, instance_name: str) -> None:
         from kubernetes.client import BatchV1Api
         batch_v1 = BatchV1Api()

@@ -88,6 +88,14 @@ class CloudProvider(abc.ABC):
         """Stream logs from an instance. Returns a Popen object or None."""
         raise NotImplementedError
 
+    def ensure_redis(self) -> str:
+        """Deploy Redis if not already running. Returns the in-cluster hostname/URL."""
+        raise NotImplementedError
+
+    def delete_redis(self) -> None:
+        """Delete the Redis pod/container."""
+        raise NotImplementedError
+
     def create_cron_job(self, spec: FunctionSpec, image_uri: str, name: str) -> str:
         """Create a scheduled cron job. Returns the job name."""
         raise NotImplementedError

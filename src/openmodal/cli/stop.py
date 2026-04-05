@@ -1,4 +1,4 @@
-"""openmodal stop — delete containers and cron jobs for an app."""
+"""openmodal stop — delete containers, cron jobs, and infrastructure for an app."""
 
 from __future__ import annotations
 
@@ -7,11 +7,19 @@ import click
 from openmodal.providers import get_provider as _get_provider
 
 
+def _cleanup_redis(provider):
+    """Delete the Redis pod/container if it exists."""
+    try:
+        provider.delete_redis()
+    except NotImplementedError:
+        pass
+
+
 @click.command()
 @click.argument("app_name")
 @click.argument("func_name", required=False, default=None)
 def stop(app_name: str, func_name: str | None):
-    """Stop (delete) containers and cron jobs for an app."""
+    """Stop (delete) containers, cron jobs, and infrastructure for an app."""
     provider = _get_provider()
     if func_name:
         name = provider.instance_name(app_name, func_name)
@@ -33,4 +41,5 @@ def stop(app_name: str, func_name: str | None):
                 provider.delete_cron_job(name)
         except NotImplementedError:
             pass
+        _cleanup_redis(provider)
         click.echo(f"Stopped all containers for {app_name}")

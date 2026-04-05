@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.13 (2026-04-05)
+
+### Added
+- **`Dict` — distributed key-value store** backed by Redis. Shared across all running functions. `d = openmodal.Dict.from_name("my-dict"); d["key"] = value`
+- **`Queue` — distributed FIFO queue** backed by Redis. Producer/consumer pattern across pods. `q = openmodal.Queue.from_name("work"); q.put(item); q.get()`
+- Redis pod is deployed lazily (only when Dict/Queue are first used) and cleaned up on `openmodal stop`
+- Works on all providers: GCP (GKE), AWS (EKS), Azure (AKS), local Docker
+
 ## 0.3.12 (2026-04-05)
 
 ### Added

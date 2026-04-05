@@ -193,6 +193,29 @@ class LocalProvider(CloudProvider):
             })
         return jobs
 
+    def ensure_redis(self) -> str:
+        redis_name = "openmodal-redis"
+        # Check if already running
+        result = subprocess.run(
+            ["docker", "inspect", redis_name],
+            capture_output=True,
+        )
+        if result.returncode == 0:
+            return f"redis://localhost:6379"
+        subprocess.run(["docker", "rm", "-f", redis_name], capture_output=True)
+        subprocess.run([
+            "docker", "run", "-d",
+            "--name", redis_name,
+            "--label", LABEL,
+            "--label", "openmodal-type=redis",
+            "--network", "host",
+            "redis:7-alpine",
+        ], check=True, capture_output=True)
+        return f"redis://localhost:6379"
+
+    def delete_redis(self) -> None:
+        subprocess.run(["docker", "rm", "-f", "openmodal-redis"], capture_output=True)
+
     def delete_instance(self, instance_name: str) -> None:
         self._rm(instance_name)
 

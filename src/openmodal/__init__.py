@@ -6,11 +6,16 @@ __version__ = _v("openmodal")
 
 from openmodal._decorators import concurrent, web_server
 from openmodal.app import App
+from openmodal.dict import Dict
 from openmodal.function import FunctionSpec
 from openmodal.image import Image
+from openmodal.queue import Queue
 from openmodal.sandbox import Sandbox
 from openmodal.schedule import Cron, Period
 from openmodal.secret import Secret
 from openmodal.volume import Volume
 
-__all__ = ["App", "Cron", "FunctionSpec", "Image", "Period", "Sandbox", "Secret", "Volume", "concurrent", "web_server"]
+__all__ = [
+    "App", "Cron", "Dict", "FunctionSpec", "Image", "Period",
+    "Queue", "Sandbox", "Secret", "Volume", "concurrent", "web_server",
+]

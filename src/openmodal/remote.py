@@ -109,6 +109,13 @@ def _create_agent_instance(app_name: str, func_name: str, spec: FunctionSpec) ->
     instance_name = f"{app_name.lower().replace('_', '-')}-{suffix}"
     spec._app_name = app_name
 
+    # Inject Redis URL if Redis has been deployed (for Dict/Queue support)
+    from openmodal.redis_backend import get_redis_url_for_container
+    redis_url = get_redis_url_for_container()
+    if redis_url:
+        from openmodal.secret import Secret
+        spec.secrets = list(spec.secrets) + [Secret.from_dict({"OPENMODAL_REDIS_URL": redis_url})]
+
     has_image = spec.image is not None
 
     if has_image:
@@ -168,15 +175,18 @@ def shutdown_all():
         collector.stop()
     _collectors.clear()
 
-    if not _executors:
-        return
-    from openmodal.cli.console import Spinner, success
-    provider = _get_provider()
-    with Spinner("Cleaning up containers..."):
-        for executor in _executors.values():
-            provider.delete_instance(executor.instance_name)
-    success("Containers cleaned up.")
-    _executors.clear()
+    if _executors:
+        from openmodal.cli.console import Spinner, success
+        provider = _get_provider()
+        with Spinner("Cleaning up containers..."):
+            for executor in _executors.values():
+                provider.delete_instance(executor.instance_name)
+        success("Containers cleaned up.")
+        _executors.clear()
+
+    # Clean up Redis if it was deployed
+    from openmodal.redis_backend import shutdown_redis
+    shutdown_redis()
 
 
 atexit.register(shutdown_all)

@@ -51,6 +51,9 @@ How OpenModal compares to the [Modal Python API](https://modal.com/docs/referenc
 | `scaledown_window=` | ✓ | ✓ |
 | **Persistent storage** | | |
 | `Volume` | ✓ | ✓ |
+| **In-memory storage** | | |
+| `Dict` | ✓ | ✓ |
+| `Queue` | ✓ | ✓ |
 | **CLI** | | |
 | `run` | ✓ | ✓ |
 | `deploy` | ✓ | ✓ |
@@ -66,7 +69,6 @@ How OpenModal compares to the [Modal Python API](https://modal.com/docs/referenc
 |---|---|
 | **High priority** | |
 | `Function.spawn()` | Planned |
-| `modal.Dict` / `modal.Queue` | Planned |
 | **Medium priority** | |
 | `Function.starmap()` / `.for_each()` | Planned |
 | `modal.Retries(backoff=)` | Planned |

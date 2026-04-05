@@ -1,0 +1,1871 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://akhatua2.github.io/openmodal/architecture/">
+      
+      
+        <link rel="prev" href="../providers/">
+      
+      
+        <link rel="next" href="../examples/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Architecture - OpenModal</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+      <link rel="stylesheet" href="../stylesheets/mermaid.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#architecture" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="OpenModal" class="md-header__button md-logo" aria-label="OpenModal" data-md-component="logo">
+      
+  <img src="../openmodal.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            OpenModal
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Architecture
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label="Light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label="Dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/akhatua2/openmodal" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    akhatua2/openmodal
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../setup/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../examples/" class="md-tabs__link">
+          
+  
+  
+  Examples
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="OpenModal" class="md-nav__button md-logo" aria-label="OpenModal" data-md-component="logo">
+      
+  <img src="../openmodal.png" alt="logo">
+
+    </a>
+    OpenModal
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/akhatua2/openmodal" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    akhatua2/openmodal
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../providers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Providers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-big-picture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The big picture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-happens-when-you-run-openmodal-run-apppy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What happens when you run openmodal run app.py
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What happens when you run openmodal run app.py">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-by-step" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step by step
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#image-building" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image building
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Image building">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#image-caching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image caching
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sandboxes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sandboxes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Sandboxes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#default-resource-requests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Default resource requests
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#remote-function-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Remote function execution
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Remote function execution">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fmap-parallel-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        f.map() — parallel execution
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gpu-serving-and-scale-to-zero" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GPU serving and scale-to-zero
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="GPU serving and scale-to-zero">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works-per-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it works per provider
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cost" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cost
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster-autoscaling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cluster autoscaling
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Cluster autoscaling">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#provider-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provider comparison
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#volumes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Volumes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#networking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Networking
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#provider-abstraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provider abstraction
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/hello_world/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hello World
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/web_scraper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Web Scraper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GPU
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    GPU
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/vllm_serving/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    vLLM Serving
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/sft_finetune/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFT Finetuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_4" id="__nav_3_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sandboxes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Sandboxes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/sandbox/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sandboxes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmarks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/cooperbench/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CooperBench
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/harbor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench with Harbor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href=".." class="md-path__link">
+        
+  <span class="md-ellipsis">
+    Home
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../setup/" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h1>
+<p>How OpenModal works under the hood — from <code>openmodal run</code> to a running container on your cloud.</p>
+<h2 id="the-big-picture">The big picture<a class="headerlink" href="#the-big-picture" title="Permanent link">&para;</a></h2>
+<p>OpenModal is an orchestration layer on top of Kubernetes. Your code gets packaged into a Docker image, pushed to a container registry, and runs as a Kubernetes pod on your cloud.</p>
+<pre class="mermaid"><code>graph LR
+    Code[your code] --&gt; Image[Docker image] --&gt; Pod[K8s pod] --&gt; Result[result]</code></pre>
+<p>Under the hood, three systems are involved:</p>
+<pre class="mermaid"><code>graph TB
+    subgraph Your Machine
+        CLI[openmodal CLI]
+    end
+
+    subgraph Container Registry
+        Image[Docker Image]
+    end
+
+    subgraph Kubernetes Cluster
+        API[K8s API Server]
+        Scheduler[Scheduler]
+        Node1[Node 1]
+        Node2[Node 2]
+        Node3[GPU Node]
+    end
+
+    CLI --&gt;|1. build &amp; push| Image
+    CLI --&gt;|2. create pod| API
+    API --&gt; Scheduler
+    Scheduler --&gt; Node1
+    Scheduler --&gt; Node2
+    Scheduler --&gt; Node3
+    Image -.-&gt;|3. pull| Node1
+    Image -.-&gt;|3. pull| Node3</code></pre>
+<ol>
+<li><strong>Container Registry</strong> (Artifact Registry, ECR, or ACR) — stores your Docker images</li>
+<li><strong>K8s API Server</strong> — accepts pod creation requests</li>
+<li><strong>Scheduler</strong> — places pods on nodes with enough CPU, memory, and GPUs</li>
+</ol>
+<h2 id="what-happens-when-you-run-openmodal-run-apppy">What happens when you run <code>openmodal run app.py</code><a class="headerlink" href="#what-happens-when-you-run-openmodal-run-apppy" title="Permanent link">&para;</a></h2>
+<pre class="mermaid"><code>sequenceDiagram
+    participant You
+    participant CLI as openmodal CLI
+    participant Registry as Container Registry
+    participant K8s as K8s API
+    participant Pod
+
+    You-&gt;&gt;CLI: openmodal run app.py
+    CLI-&gt;&gt;CLI: Generate Dockerfile from Image chain
+    CLI-&gt;&gt;Registry: Build &amp; push image
+    CLI-&gt;&gt;K8s: Create pod with image
+    K8s-&gt;&gt;Pod: Schedule on node, pull image, start
+    Pod-&gt;&gt;Pod: Unpickle args → call function → pickle result
+    Pod--&gt;&gt;CLI: Return result
+    CLI--&gt;&gt;You: Print return value</code></pre>
+<h3 id="step-by-step">Step by step<a class="headerlink" href="#step-by-step" title="Permanent link">&para;</a></h3>
+<p><strong>1. Image build.</strong> OpenModal reads the <code>Image</code> chain (<code>.apt_install()</code>, <code>.pip_install()</code>, etc.) and generates a Dockerfile. It builds the image and pushes it to a registry.</p>
+<table>
+<thead>
+<tr>
+<th>Provider</th>
+<th>Registry</th>
+<th>Build method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GCP</td>
+<td>Artifact Registry</td>
+<td>Cloud Build (remote)</td>
+</tr>
+<tr>
+<td>AWS</td>
+<td>ECR</td>
+<td>Local <code>docker build</code> + push</td>
+</tr>
+<tr>
+<td>Azure</td>
+<td>ACR</td>
+<td>ACR Tasks (remote)</td>
+</tr>
+<tr>
+<td>Local</td>
+<td>None</td>
+<td>Local <code>docker build</code></td>
+</tr>
+</tbody>
+</table>
+<p>GCP and Azure build images remotely — no local Docker needed. AWS uses local Docker because CodeBuild requires admin IAM permissions.</p>
+<p><strong>2. Pod creation.</strong> OpenModal creates a Kubernetes pod spec with your image, resource requests, GPU requirements, env vars, and volumes, then submits it to the K8s API.</p>
+<p><strong>3. Scheduling.</strong> The scheduler finds a node with enough free resources. If nothing fits, the pod stays <code>Pending</code> and the cluster autoscaler adds a new node (see <a href="#cluster-autoscaling">Cluster autoscaling</a>).</p>
+<p><strong>4. Image pull.</strong> The node pulls the image from the registry. First pull is slow (2-30s depending on image size). Subsequent pulls on the same node use cached layers.</p>
+<p><strong>5. Execution.</strong> The container runs the OpenModal agent, which unpickles your function arguments, calls your function, pickles the result, and sends it back (see <a href="#remote-function-execution">Remote function execution</a>).</p>
+<h2 id="image-building">Image building<a class="headerlink" href="#image-building" title="Permanent link">&para;</a></h2>
+<p>The <code>Image</code> class is a chainable Dockerfile generator. Each method call appends a line to the Dockerfile:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">image</span> <span class="o">=</span> <span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">openmodal</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">debian_slim</span><span class="p">()</span>         <span class="c1"># FROM ubuntu:24.04 + python 3.12</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="o">.</span><span class="n">apt_install</span><span class="p">(</span><span class="s2">&quot;git&quot;</span><span class="p">,</span> <span class="s2">&quot;curl&quot;</span><span class="p">)</span>           <span class="c1"># RUN apt-get install -y git curl</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="o">.</span><span class="n">pip_install</span><span class="p">(</span><span class="s2">&quot;torch&quot;</span><span class="p">,</span> <span class="s2">&quot;transformers&quot;</span><span class="p">)</span> <span class="c1"># RUN pip install torch transformers</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="o">.</span><span class="n">run_commands</span><span class="p">(</span><span class="s2">&quot;echo setup done&quot;</span><span class="p">)</span>      <span class="c1"># RUN echo setup done</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">)</span>
+</code></pre></div>
+<p>This generates:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">FROM</span><span class="w"> </span><span class="s">ubuntu:24.04</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="k">ENV</span><span class="w"> </span><span class="nv">DEBIAN_FRONTEND</span><span class="o">=</span>noninteractive
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">RUN</span><span class="w"> </span>curl<span class="w"> </span>-sSL<span class="w"> </span>&lt;python-build-standalone-url&gt;<span class="w"> </span><span class="p">|</span><span class="w"> </span>tar<span class="w"> </span>xz<span class="w"> </span>-C<span class="w"> </span>/usr/local<span class="w"> </span>...
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="k">RUN</span><span class="w"> </span>apt-get<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>git<span class="w"> </span>curl<span class="w"> </span>...
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="k">RUN</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>torch<span class="w"> </span>transformers
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="k">RUN</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span>setup<span class="w"> </span><span class="k">done</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="k">RUN</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>openmodal
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="k">COPY</span><span class="w"> </span>your_app.py<span class="w"> </span>/opt/your_app.py
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="k">CMD</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;python&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;-m&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;openmodal.runtime.agent&quot;</span><span class="p">]</span>
+</code></pre></div>
+<p>Python is installed via <a href="https://github.com/astral-sh/python-build-standalone">python-build-standalone</a> (pre-compiled binaries from Astral). This means any Python version (3.10–3.13) works on any base image — you're not tied to the distro's Python.</p>
+<h3 id="image-caching">Image caching<a class="headerlink" href="#image-caching" title="Permanent link">&para;</a></h3>
+<p>Images are content-hashed. If the Dockerfile and source files haven't changed, OpenModal skips the build entirely and reuses the existing image from the registry.</p>
+<h2 id="sandboxes">Sandboxes<a class="headerlink" href="#sandboxes" title="Permanent link">&para;</a></h2>
+<p>Sandboxes are long-running containers you can exec commands into — like SSH-ing into a machine. They're used by coding agents (CooperBench, Harbor/SWE-bench) that need to run bash commands, edit files, and run tests inside a codebase.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant Agent as Your Code
+    participant K8s as K8s API
+    participant Pod as Sandbox Pod
+
+    Agent-&gt;&gt;K8s: Sandbox.create(image=..., timeout=300)
+    K8s-&gt;&gt;Pod: Start pod running "sleep 300"
+
+    Agent-&gt;&gt;Pod: sandbox.exec("git diff")
+    Pod--&gt;&gt;Agent: stdout, stderr, returncode
+
+    Agent-&gt;&gt;Pod: sandbox.exec("python test.py")
+    Pod--&gt;&gt;Agent: stdout, stderr, returncode
+
+    Agent-&gt;&gt;K8s: sandbox.terminate()
+    K8s-&gt;&gt;Pod: Delete pod</code></pre>
+<p>The pod runs <code>sleep &lt;timeout&gt;</code> as its main process — this keeps the container alive while you exec commands into it. Each <code>exec</code> call runs a separate process inside the same container, sharing the same filesystem. Under the hood, <code>exec_in_pod</code> uses the Kubernetes exec API (websocket to the kubelet). On local Docker, it's just <code>docker exec</code>.</p>
+<h3 id="default-resource-requests">Default resource requests<a class="headerlink" href="#default-resource-requests" title="Permanent link">&para;</a></h3>
+<p>Every sandbox pod requests <strong>0.25 CPU and 256 MB RAM</strong>. This is important for autoscaling — it tells the scheduler how many pods fit on a node:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>e2-standard-8 node (8 CPU, 32 GB RAM)
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>→ fits ~32 sandbox pods at 0.25 CPU each
+</code></pre></div>
+<p>OpenModal sets these defaults automatically so the autoscaler works out of the box.</p>
+<h2 id="remote-function-execution">Remote function execution<a class="headerlink" href="#remote-function-execution" title="Permanent link">&para;</a></h2>
+<p>When you call <code>f.remote(x)</code>, your arguments are serialized (pickled), sent to a pod, and the result is pickled back:</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant Client as Your machine
+    participant Agent as Pod: openmodal agent
+    participant Func as Your function
+
+    Client-&gt;&gt;Agent: Pickled (func_name, args, kwargs)
+    Agent-&gt;&gt;Agent: Import your module as "_user_app"
+    Agent-&gt;&gt;Agent: Unpickle args
+    Agent-&gt;&gt;Func: Call function(args, kwargs)
+    Func--&gt;&gt;Agent: Return value
+    Agent--&gt;&gt;Client: Pickled result</code></pre>
+<p>The agent registers your module as <code>_user_app</code> in <code>sys.modules</code> <strong>before</strong> unpickling. This is critical — when you pass a dataclass or Pydantic model as an argument, Python pickles it with the module path (e.g., <code>_user_app.TrainingConfig</code>). The agent needs that module to exist to reconstruct the object.</p>
+<h3 id="fmap-parallel-execution"><code>f.map()</code> — parallel execution<a class="headerlink" href="#fmap-parallel-execution" title="Permanent link">&para;</a></h3>
+<p><code>f.map(inputs)</code> creates one pod per input and runs them in parallel across the cluster:</p>
+<pre class="mermaid"><code>graph TB
+    Client[Your machine]
+    Client --&gt;|"f.map([a, b, c, d])"| Pool[ThreadPoolExecutor]
+    Pool --&gt; Pod1[Pod 1: f-a]
+    Pool --&gt; Pod2[Pod 2: f-b]
+    Pool --&gt; Pod3[Pod 3: f-c]
+    Pool --&gt; Pod4[Pod 4: f-d]
+    Pod1 -.-&gt;|result| Client
+    Pod2 -.-&gt;|result| Client
+    Pod3 -.-&gt;|result| Client
+    Pod4 -.-&gt;|result| Client</code></pre>
+<p>Each pod runs on potentially different nodes. Results are yielded as they complete — you don't wait for all pods to finish before getting the first result.</p>
+<h2 id="gpu-serving-and-scale-to-zero">GPU serving and scale-to-zero<a class="headerlink" href="#gpu-serving-and-scale-to-zero" title="Permanent link">&para;</a></h2>
+<p>When you deploy a web server (e.g., vLLM), OpenModal creates a GPU pod and monitors it for idle connections. If nobody connects for <code>scaledown_window</code> seconds, the pod is deleted and the GPU is released.</p>
+<pre class="mermaid"><code>stateDiagram-v2
+    [*] --&gt; Deployed: openmodal deploy
+    Deployed --&gt; Serving: requests arrive
+    Serving --&gt; Idle: no connections
+    Idle --&gt; Serving: new request
+    Idle --&gt; ScaledToZero: idle &gt; scaledown_window
+    ScaledToZero --&gt; Deployed: openmodal deploy</code></pre>
+<h3 id="how-it-works-per-provider">How it works per provider<a class="headerlink" href="#how-it-works-per-provider" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>GCP</strong>: A CronJob runs every 60 seconds, checks active connections via a shell script, and deletes the pod if idle</li>
+<li><strong>AWS / Azure</strong>: KEDA (Kubernetes Event-Driven Autoscaler) watches metrics and scales the deployment to zero replicas when idle</li>
+</ul>
+<h3 id="cost">Cost<a class="headerlink" href="#cost" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>What's running</th>
+<th>Approximate cost</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Serving requests</td>
+<td>GPU node + pod</td>
+<td>~$1.20/hr (H100 spot)</td>
+</tr>
+<tr>
+<td>Idle, within scaledown window</td>
+<td>Same</td>
+<td>Same</td>
+</tr>
+<tr>
+<td>Scaled to zero</td>
+<td>Control plane + default node</td>
+<td>~$0.10/hr</td>
+</tr>
+<tr>
+<td>Cluster deleted</td>
+<td>Nothing</td>
+<td>$0</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cluster-autoscaling">Cluster autoscaling<a class="headerlink" href="#cluster-autoscaling" title="Permanent link">&para;</a></h2>
+<p>When many pods are created at once (e.g., CooperBench running 60 agents), the cluster scales up automatically.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant App as Your app
+    participant Sched as K8s Scheduler
+    participant CA as Cluster Autoscaler
+    participant Cloud as Cloud API
+
+    App-&gt;&gt;Sched: Create 60 pods (0.25 CPU each)
+    Sched-&gt;&gt;Sched: Existing node fits ~12
+    Note over Sched: 12 Running, 48 Pending
+    CA-&gt;&gt;Cloud: 48 Pending → add 2 nodes
+    Cloud--&gt;&gt;CA: Nodes ready (~60s)
+    Sched-&gt;&gt;Sched: Schedule remaining pods
+    Note over Sched: All 60 Running
+
+    Note over App,Cloud: Pods complete, nodes idle 5 min...
+    CA-&gt;&gt;Cloud: Remove idle nodes</code></pre>
+<p>OpenModal sets default resource requests (0.25 CPU, 256 MB) on every sandbox pod, so the scheduler correctly distributes pods across nodes and the autoscaler fires when needed.</p>
+<h3 id="provider-comparison">Provider comparison<a class="headerlink" href="#provider-comparison" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>GCP (GKE)</th>
+<th>AWS (EKS)</th>
+<th>Azure (AKS)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Autoscaler</td>
+<td>GKE cluster autoscaler</td>
+<td>Karpenter</td>
+<td>AKS cluster autoscaler</td>
+</tr>
+<tr>
+<td>Sandbox nodes</td>
+<td><code>e2-standard-8</code> pool</td>
+<td>Karpenter picks best fit</td>
+<td><code>Standard_D8s_v5</code></td>
+</tr>
+<tr>
+<td>Max nodes</td>
+<td>100 per zone</td>
+<td>100 CPU limit</td>
+<td>100</td>
+</tr>
+<tr>
+<td>Scale-up time</td>
+<td>~60s</td>
+<td>~30-60s</td>
+<td>~60-90s</td>
+</tr>
+<tr>
+<td>GPU nodes</td>
+<td>Separate pool per GPU type</td>
+<td>Karpenter auto-provisions</td>
+<td>Separate pool per GPU</td>
+</tr>
+</tbody>
+</table>
+<h2 id="volumes">Volumes<a class="headerlink" href="#volumes" title="Permanent link">&para;</a></h2>
+<p>Volumes sync data between cloud storage and pod filesystems. No CSI drivers or IAM admin permissions needed — it uses init containers and sidecars.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant Cloud as Cloud Storage
+    participant Init as Init Container
+    participant Main as Main Container
+    participant Sidecar as Sidecar
+
+    Note over Init,Main: Pod starts
+    Init-&gt;&gt;Cloud: Sync data down to /vol
+    Init--&gt;&gt;Main: Done, volume ready
+
+    Note over Main: Your code runs, reads/writes /vol
+
+    Note over Main,Sidecar: Pod shutting down
+    Sidecar-&gt;&gt;Cloud: Sync /vol back up to cloud</code></pre>
+<p>All three containers (init, main, sidecar) share an <code>emptyDir</code> volume — an ephemeral disk on the node. The init container downloads data before your code starts. The sidecar uploads changes when the pod shuts down.</p>
+<table>
+<thead>
+<tr>
+<th>Provider</th>
+<th>Cloud storage</th>
+<th>Sync tool</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GCP</td>
+<td>GCS bucket</td>
+<td><code>gcloud storage rsync</code></td>
+</tr>
+<tr>
+<td>AWS</td>
+<td>S3 bucket</td>
+<td><code>aws s3 sync</code></td>
+</tr>
+<tr>
+<td>Azure</td>
+<td>Azure Blob</td>
+<td><code>az storage blob sync</code></td>
+</tr>
+<tr>
+<td>Local</td>
+<td><code>~/.openmodal/volumes/</code></td>
+<td>Direct bind mount</td>
+</tr>
+</tbody>
+</table>
+<h2 id="networking">Networking<a class="headerlink" href="#networking" title="Permanent link">&para;</a></h2>
+<p>How your machine talks to pods differs by provider:</p>
+<pre class="mermaid"><code>graph LR
+    subgraph GCP
+        You1[Your machine] --&gt;|direct HTTP| PodGCP[Pod 10.x.x.x]
+    end
+
+    subgraph AWS / Azure
+        You2[Your machine] --&gt;|localhost:PORT| KPF[kubectl port-forward]
+        KPF --&gt;|tunnel| PodAWS[Pod 10.x.x.x]
+    end</code></pre>
+<table>
+<thead>
+<tr>
+<th>Provider</th>
+<th>How</th>
+<th>Why</th>
+<th>Latency overhead</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GCP</td>
+<td>Direct pod IP</td>
+<td>GKE pods get routable IPs</td>
+<td>~0ms</td>
+</tr>
+<tr>
+<td>AWS</td>
+<td><code>kubectl port-forward</code></td>
+<td>EKS pod IPs are VPC-internal</td>
+<td>~100ms</td>
+</tr>
+<tr>
+<td>Azure</td>
+<td><code>kubectl port-forward</code></td>
+<td>AKS pod IPs are VPC-internal</td>
+<td>~100ms</td>
+</tr>
+<tr>
+<td>Local</td>
+<td>Container IP / <code>docker exec</code></td>
+<td>Docker bridge network</td>
+<td>~0ms</td>
+</tr>
+</tbody>
+</table>
+<p>This matters for web servers (vLLM, FastAPI). For sandboxes, all providers use the K8s exec API which has similar latency everywhere.</p>
+<h2 id="provider-abstraction">Provider abstraction<a class="headerlink" href="#provider-abstraction" title="Permanent link">&para;</a></h2>
+<p>All providers implement the same <code>CloudProvider</code> interface. Your code never touches the provider directly.</p>
+<pre class="mermaid"><code>classDiagram
+    class CloudProvider {
+        &lt;&lt;abstract&gt;&gt;
+        +create_instance(spec, image_uri, name)
+        +delete_instance(name)
+        +create_sandbox_pod(name, image, timeout, gpu, cpu, memory)
+        +exec_in_pod(pod_name, *args)
+        +build_image(dockerfile_dir, name, tag)
+        +copy_to_pod(pod_name, local, remote)
+        +copy_from_pod(pod_name, remote, local)
+        +ensure_volume(name)
+        +stream_logs(instance_name)
+    }
+
+    CloudProvider &lt;|-- GKEProvider
+    CloudProvider &lt;|-- EKSProvider
+    CloudProvider &lt;|-- AKSProvider
+    CloudProvider &lt;|-- LocalProvider</code></pre>
+<p>The provider is selected by:</p>
+<ul>
+<li>CLI flag: <code>--local</code>, <code>--aws</code>, <code>--azure</code> (GCP is the default)</li>
+<li>Environment variable: <code>OPENMODAL_PROVIDER=local|gcp|aws|azure</code></li>
+</ul>
+<p>Switching providers changes where your code runs, not how you write it.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.sections", "navigation.tabs", "navigation.top", "navigation.path", "content.code.copy", "toc.integrate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../javascripts/mermaid-init.js"></script>
+      
+    
+  </body>
+</html>

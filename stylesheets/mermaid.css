@@ -1,0 +1,17 @@
+/* Fix Mermaid arrow colors — make arrowheads match line color */
+.mermaid .arrowheadPath {
+  fill: var(--md-default-fg-color--light) !important;
+  stroke: var(--md-default-fg-color--light) !important;
+}
+
+.mermaid .flowchart-link,
+.mermaid .messageLine0,
+.mermaid .messageLine1,
+.mermaid .relation {
+  stroke: var(--md-default-fg-color--light) !important;
+}
+
+.mermaid marker path {
+  fill: var(--md-default-fg-color--light) !important;
+  stroke: var(--md-default-fg-color--light) !important;
+}

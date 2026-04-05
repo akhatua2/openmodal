@@ -493,6 +493,7 @@ class GKEProvider(CloudProvider):
         app_label = _k8s_name(spec._app_name) if spec._app_name else k8s_name
         pod_template = _build_pod_spec(spec, image_uri, k8s_name)
         pod_template.spec.restart_policy = "Never"
+        pod_template.metadata.labels["app"] = app_label
 
         cronjob = client.V1CronJob(
             metadata=client.V1ObjectMeta(

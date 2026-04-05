@@ -1,4 +1,10 @@
-"""Uptime Monitor -- pings https://arpandeep.com/ every minute."""
+"""Uptime Monitor -- pings https://arpandeep.com/ every minute.
+
+    openmodal deploy examples/uptime_monitor.py
+    openmodal ps
+    openmodal logs uptime-monitor
+    openmodal stop uptime-monitor
+"""
 
 import openmodal
 

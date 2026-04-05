@@ -12,7 +12,7 @@ from typing import Any
 
 logger = logging.getLogger("openmodal.image")
 
-OPENMODAL_PIP_INSTALL = "RUN pip install openmodal"
+OPENMODAL_PIP_INSTALL = "RUN pip install --no-cache-dir openmodal"
 
 # Pre-compiled Python builds from python-build-standalone (maintained by Astral/uv).
 # Allows installing any Python version on any base image.

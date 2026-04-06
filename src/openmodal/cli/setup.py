@@ -8,7 +8,7 @@ import subprocess
 
 import click
 
-from openmodal.cli.prompt import confirm, done, header, select, step_fail, step_hint, step_ok
+from openmodal.cli.prompt import BOLD, DIM, RESET, confirm, done, header, select, step_fail, step_hint, step_ok
 
 
 def _run(cmd: list[str]) -> subprocess.CompletedProcess:
@@ -40,9 +40,10 @@ def setup(ctx):
         "GCP",
         "AWS",
         "Azure",
+        "Cluster (SSH)",
     ])
 
-    cmd_map = {"Local (Docker)": local, "GCP": gcp, "AWS": aws, "Azure": azure}
+    cmd_map = {"Local (Docker)": local, "GCP": gcp, "AWS": aws, "Azure": azure, "Cluster (SSH)": cluster}
     ctx.invoke(cmd_map[provider])
 
 
@@ -274,3 +275,98 @@ def azure():
             return
 
     done("You're all set! Try: openmodal --azure run examples/hello_world.py")
+
+
+@setup.command()
+def cluster():
+    """Set up an SSH cluster provider (no Docker, no SLURM)."""
+    header("Setting up SSH Cluster")
+
+    if not _need("ssh", "SSH should be pre-installed on your system"):
+        return
+
+    # Collect nodes
+    click.echo(f"  {BOLD}Enter SSH host aliases{RESET} (must match ~/.ssh/config entries)")
+    click.echo(f"  {DIM}Comma-separated, e.g.: ampere1,ampere2,ampere3{RESET}")
+    nodes_input = click.prompt("  Nodes", type=str)
+    nodes = [n.strip() for n in nodes_input.split(",") if n.strip()]
+
+    if not nodes:
+        step_fail("No nodes provided")
+        return
+
+    # Test SSH to each node
+    reachable = []
+    for node in nodes:
+        result = _run(["ssh", "-O", "check", node])
+        if result.returncode == 0:
+            step_ok(f"{node} — connected")
+            reachable.append(node)
+        else:
+            # Try a quick connect
+            result = _run(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=5", node, "hostname"])
+            if result.returncode == 0:
+                step_ok(f"{node} — connected")
+                reachable.append(node)
+            else:
+                step_fail(f"{node} — cannot connect (open a session first: ssh {node})")
+
+    if not reachable:
+        step_fail("No reachable nodes. Connect to at least one node first.")
+        return
+
+    # Pick default node
+    if len(reachable) > 1:
+        default_node = select("Default node?", reachable)
+    else:
+        default_node = reachable[0]
+    step_ok(f"Default node: {default_node}")
+
+    # Remote working directory
+    click.echo(f"\n  {BOLD}Remote working directory{RESET}")
+    click.echo(f"  {DIM}Where OpenModal stores envs, code, logs on the cluster.{RESET}")
+    click.echo(f"  {DIM}Use a shared filesystem if nodes share storage.{RESET}")
+    remote_base = click.prompt("  Path", type=str, default="~/.openmodal")
+    step_ok(f"Remote base: {remote_base}")
+
+    # Env setup script (optional)
+    click.echo(f"\n  {BOLD}Environment setup script{RESET} {DIM}(optional){RESET}")
+    click.echo(f"  {DIM}Sourced before every command. Sets up PATH, caches, conda, etc.{RESET}")
+    env_script = click.prompt("  Script path (or 'none')", type=str, default="none")
+    if env_script.lower() == "none":
+        env_script = None
+    else:
+        step_ok(f"Env script: {env_script}")
+
+    # Check for uv on the default node
+    result = _run(["ssh", "-o", "BatchMode=yes", default_node, "bash -lc 'which uv'"])
+    if result.returncode == 0:
+        step_ok("uv is available on the cluster")
+    else:
+        # Try with env script
+        if env_script:
+            result = _run(["ssh", "-o", "BatchMode=yes", default_node, f"source {env_script} && which uv"])
+        if result.returncode != 0:
+            step_fail("uv is not available on the cluster")
+            step_hint("Install: curl -LsSf https://astral.sh/uv/install.sh | sh")
+            return
+
+    # Save config
+    from openmodal.providers.cluster.config import save_config
+    save_config({
+        "nodes": reachable,
+        "default_node": default_node,
+        "remote_base": remote_base,
+        "env_setup_script": env_script,
+    })
+    step_ok("Config saved to ~/.openmodal/cluster.json")
+
+    # Create remote directories
+    subdirs = " ".join(f"{remote_base}/{d}" for d in ("envs", "logs", "pids", "code", "volumes"))
+    result = _run(["ssh", "-o", "BatchMode=yes", default_node, f"mkdir -p {subdirs}"])
+    if result.returncode == 0:
+        step_ok("Remote directories created")
+    else:
+        step_fail(f"Could not create remote directories: {result.stderr.strip()}")
+
+    done(f"You're all set! Try: openmodal --cluster run examples/hello_world.py")
